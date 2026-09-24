@@ -47,7 +47,7 @@ MonkeyClash part de cette branche et **ajoute son propre serveur temps réel**, 
 - [x] Fork basé sur le client Tribe
 - [x] Serveur temps réel compatible Tribe (salons, countdown, progression, résultats) : voir [`tribe-server/`](tribe-server/)
 - [x] Chat de salon
-- [ ] Déploiement sur `monkeyclash.assistantstudent.com`
+- [x] Déploiement sur `monkeyclash.assistantstudent.com` (voir [`deploy/`](deploy/))
 - [ ] Comptes, **historique des duels et stats** (victoires, meilleur wpm, head-to-head entre potes)
 
 # Crédits et licence
