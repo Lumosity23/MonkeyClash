@@ -127,8 +127,8 @@ function getPlugins({
       injectRegister: null,
       registerType: "autoUpdate",
       manifest: {
-        short_name: "Monkeytype",
-        name: "Monkeytype",
+        short_name: "MonkeyClash",
+        name: "MonkeyClash",
         start_url: "/",
         icons: [
           {

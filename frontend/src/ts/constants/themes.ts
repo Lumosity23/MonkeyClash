@@ -2322,6 +2322,19 @@ export const themes: Record<ThemeName, Theme> = {
     colorfulError: "#b29a91",
     colorfulErrorExtra: "#b29a91",
   },
+  // MonkeyClash: serika dark with the graffiti red as main color, errors in yellow
+  monkeyclash: {
+    bg: "#323437",
+    caret: "#ca4754",
+    main: "#ca4754",
+    sub: "#646669",
+    subAlt: "#2c2e31",
+    text: "#d1d0c5",
+    error: "#e2b714",
+    errorExtra: "#9b7d0e",
+    colorfulError: "#e2b714",
+    colorfulErrorExtra: "#9b7d0e",
+  },
 };
 
 export type ThemeWithName = Theme & { name: ThemeName };

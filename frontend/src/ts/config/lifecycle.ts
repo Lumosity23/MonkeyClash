@@ -47,10 +47,26 @@ export async function loadFromLocalStorage(): Promise<void> {
   if (newConfig === undefined) {
     await resetConfig();
   } else {
+    applyMonkeyClashDefaults(newConfig);
     await applyConfig(newConfig);
     saveFullConfigToLocalStorage(true);
   }
   loadDone();
+}
+
+const monkeyClashDefaultsKey = "monkeyClashDefaultsApplied";
+
+// Configs saved before the monkeyclash theme existed still use serika dark,
+// they get switched to it once.
+function applyMonkeyClashDefaults(config: ConfigSchemas.Config): void {
+  try {
+    if (localStorage.getItem(monkeyClashDefaultsKey) !== null) return;
+    localStorage.setItem(monkeyClashDefaultsKey, "true");
+  } catch {
+    return;
+  }
+  if (config.theme === "serika_dark") config.theme = "monkeyclash";
+  if (config.themeDark === "serika_dark") config.themeDark = "monkeyclash";
 }
 
 const lastConfigsToApply: Set<keyof ConfigSchemas.Config> = new Set([

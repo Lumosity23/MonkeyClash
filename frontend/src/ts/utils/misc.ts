@@ -475,7 +475,7 @@ export function updateTitle(title?: string): void {
   const local = isDevEnvironment() ? "localhost - " : "";
 
   if (title === undefined || title === "") {
-    document.title = `${local}Monkeytype | A minimalistic, customizable typing test`;
+    document.title = `${local}MonkeyClash | Typing duels with your friends`;
   } else {
     document.title = local + title;
   }

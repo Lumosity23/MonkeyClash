@@ -192,7 +192,6 @@ export function SettingsPage(): JSXElement {
           </Section>
           <Section title="danger zone">
             <ImportExport />
-            <SearchableAutoSetting key="ads" />
             <SearchableSetting
               key="cookies"
               title="update cookie preferences"

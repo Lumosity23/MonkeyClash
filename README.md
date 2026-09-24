@@ -48,12 +48,13 @@ MonkeyClash part de cette branche et **ajoute son propre serveur temps réel**, 
 - [x] Serveur temps réel compatible Tribe (salons, countdown, progression, résultats) : voir [`tribe-server/`](tribe-server/)
 - [x] Chat de salon
 - [x] Déploiement sur `monkeyclash.assistantstudent.com` (voir [`deploy/`](deploy/))
+- [x] Rebranding : thème `monkeyclash` par défaut, logo « m c. », sans pubs ni merch
 - [ ] Comptes, **historique des duels et stats** (victoires, meilleur wpm, head-to-head entre potes)
 
 # Crédits et licence
 
 MonkeyClash est un projet de fans **non affilié à Monkeytype**. Tout le moteur de frappe, l'interface et le client multijoueur viennent du travail de [Miodec](https://github.com/Miodec) et des [contributeurs de Monkeytype](https://github.com/monkeytypegame/monkeytype/graphs/contributors). Allez jouer sur [monkeytype.com](https://monkeytype.com) et soutenez-les !
 
-Comme l'original, ce projet est sous licence [GPL-3.0](LICENSE). Le tag « Clash » utilise la police [Sedgwick Ave Display](https://fonts.google.com/specimen/Sedgwick+Ave+Display) (SIL Open Font License), et la bannière se régénère avec `scripts/banner/make_banner.py`.
+Comme l'original, ce projet est sous licence [GPL-3.0](LICENSE). Le tag « Clash » utilise la police [Sedgwick Ave Display](https://fonts.google.com/specimen/Sedgwick+Ave+Display) (SIL Open Font License), la bannière se régénère avec `scripts/banner/make_banner.py` et les icônes avec `scripts/branding/`.
 
 Le README original de Monkeytype est dans [`docs/MONKEYTYPE_README.md`](docs/MONKEYTYPE_README.md).

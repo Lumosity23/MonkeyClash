@@ -8,9 +8,11 @@ Usage (needs `pip install fonttools`), with the fonts in one directory:
     curl -LO https://raw.githubusercontent.com/google/fonts/main/ofl/sedgwickavedisplay/SedgwickAveDisplay-Regular.ttf
     cd ..
     python3 scripts/banner/make_banner.py fonts \
-        frontend/static/images/githubbanner2.png frontend/static/images/monkeyclash-banner.svg [variant]
+        frontend/static/images/githubbanner-monkeyclash.png frontend/static/images/monkeyclash-banner.svg [variant]
 
 `variant` picks one of the VARIANTS below (default: "mono").
+The base image is Monkeytype's banner with the MonkeyClash logo, made by
+scripts/branding/recolor_icons.py and make_icons.py.
 """
 
 import base64
