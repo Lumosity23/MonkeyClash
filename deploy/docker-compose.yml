@@ -1,6 +1,7 @@
 # MonkeyClash stack. Run from this folder: docker compose up -d --build
-# Needs deploy/.env (see .env.example) and, for the Cloudflare tunnel,
-# deploy/secrets/tunnel.yml + deploy/secrets/creds.json.
+# Needs deploy/.env (see .env.example), for the Cloudflare tunnel
+# deploy/secrets/tunnel.yml + deploy/secrets/creds.json, and for accounts the
+# Firebase service account key in deploy/secrets/serviceAccountKey.json.
 name: monkeyclash
 
 services:
@@ -10,6 +11,7 @@ services:
       dockerfile: deploy/frontend.Dockerfile
       args:
         SITE_URL: ${SITE_URL}
+        RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
     ports:
       # handy to test from the LAN, the public access goes through the tunnel
       - "${LAN_PORT:-8090}:80"
@@ -34,8 +36,14 @@ services:
       - DB_URI=mongodb://mongodb:27017
       - REDIS_URI=redis://redis:6379
       - FRONTEND_URL=${SITE_URL}
+      - RECAPTCHA_SECRET=${RECAPTCHA_SECRET}
     volumes:
       - ./backend-configuration.json:/app/backend/dist/backend-configuration.json:ro
+      # long syntax: fails loudly instead of creating a folder if the key is missing
+      - type: bind
+        source: ./secrets/serviceAccountKey.json
+        target: /app/backend/src/credentials/serviceAccountKey.json
+        read_only: true
     depends_on:
       mongodb:
         condition: service_healthy
