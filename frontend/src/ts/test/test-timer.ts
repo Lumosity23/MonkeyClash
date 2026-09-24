@@ -30,7 +30,7 @@ import {
   getLiveCachedAccuracy,
   getLiveCachedTestDurationMs,
 } from "./events/live-cache";
-import { getChars, getKeypressesPerSecond } from "./events/stats";
+import { getChars } from "./events/stats";
 import { calculateWpm } from "../utils/numbers";
 import { isTestActive, setCurrentLiveStats } from "../states/test";
 
@@ -315,15 +315,6 @@ function timerStep(now: number, catchingUp: boolean): void {
     layoutfluid();
     const failed = checkIfFailed(wpmAndRaw, acc);
     if (!failed) checkIfTimeIsUp();
-
-    //todo: live cache this?
-    const keypresses = getKeypressesPerSecond(eventLog);
-
-    const totalKeypresses = keypresses.reduce((acc, val) => acc + val, 0);
-
-    if (Time.get() >= 3 && totalKeypresses === 0) {
-      timerEvent.dispatch({ key: "finish" });
-    }
   }
 
   // sendTribeProgress(wpmAndRaw.wpm, wpmAndRaw.raw, acc);
