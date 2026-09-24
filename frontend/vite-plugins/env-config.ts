@@ -33,6 +33,7 @@ export function envConfig(options: {
           quickLoginEmail: options.env["QUICK_LOGIN_EMAIL"],
           quickLoginPassword: options.env["QUICK_LOGIN_PASSWORD"],
           forceTribe: options.env["FORCE_TRIBE"] === "true",
+          tribeUrl: fallback(options.env["TRIBE_URL"], "http://localhost:3005"),
         };
 
         const prodConfig: EnvConfig = {
@@ -46,6 +47,8 @@ export function envConfig(options: {
           quickLoginPassword: undefined,
           clientVersion: options.clientVersion,
           forceTribe: options.env["FORCE_TRIBE"] === "true",
+          // empty: the tribe server is reached on the site's own origin
+          tribeUrl: options.env["TRIBE_URL"] ?? "",
         };
 
         const envConfig = options.isDevelopment ? devConfig : prodConfig;

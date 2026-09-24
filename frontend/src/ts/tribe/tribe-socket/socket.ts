@@ -1,11 +1,9 @@
 import { io } from "socket.io-client";
+import { envConfig } from "virtual:env-config";
 
 export default io(
-  window.location.hostname === "localhost"
-    ? "http://localhost:3005"
-    : "https://tribe.monkeytype.com",
+  envConfig.tribeUrl !== "" ? envConfig.tribeUrl : window.location.origin,
   {
-    // socket: io("http://localhost:3000", {
     autoConnect: false,
     secure: true,
     reconnectionAttempts: 0,

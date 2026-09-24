@@ -6,6 +6,7 @@ export type EnvConfig = {
   quickLoginEmail: string | undefined;
   quickLoginPassword: string | undefined;
   forceTribe: boolean;
+  tribeUrl: string;
 };
 
 declare module "virtual:env-config" {
