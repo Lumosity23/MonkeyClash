@@ -315,6 +315,15 @@ describe("tribe server", () => {
     expect(rejoin).toEqual({ status: "You are banned from this room" });
   });
 
+  it("counts all rooms and public rooms separately", async () => {
+    const { bob } = await duelRoom();
+    const stats = (await bob.emitWithAck("system_stats")) as {
+      stats: [number, { custom: [number, number] }];
+    };
+    // one private room: counted in "create room", not in "browse public rooms"
+    expect(stats.stats[1].custom).toEqual([1, 0]);
+  });
+
   it("lists public rooms only", async () => {
     const { alice, bob, room } = await duelRoom();
     expect(

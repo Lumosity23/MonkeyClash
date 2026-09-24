@@ -146,7 +146,8 @@ export function createTribeServer(
       (ack as Ack)({
         stats: [
           io.engine.clientsCount,
-          { mm: [0, 0, 0, 0], custom: [publicRooms.length, rooms.size] },
+          // custom: [all rooms (create button), public rooms (browse button)]
+          { mm: [0, 0, 0, 0], custom: [rooms.size, publicRooms.length] },
           [0, 0, 0, 0],
           opts.version,
         ],
