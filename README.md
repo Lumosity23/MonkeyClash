@@ -45,8 +45,8 @@ MonkeyClash part de cette branche et **ajoute son propre serveur temps réel**, 
 # Roadmap
 
 - [x] Fork basé sur le client Tribe
-- [ ] Serveur temps réel compatible Tribe (salons, countdown, progression, résultats)
-- [ ] Chat de salon
+- [x] Serveur temps réel compatible Tribe (salons, countdown, progression, résultats) : voir [`tribe-server/`](tribe-server/)
+- [x] Chat de salon
 - [ ] Déploiement sur `monkeyclash.assistantstudent.com`
 - [ ] Comptes, **historique des duels et stats** (victoires, meilleur wpm, head-to-head entre potes)
 
