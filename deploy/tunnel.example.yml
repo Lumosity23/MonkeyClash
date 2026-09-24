@@ -1,0 +1,7 @@
+# copy to deploy/secrets/tunnel.yml, the credentials go to deploy/secrets/creds.json
+tunnel: <tunnel id>
+credentials-file: /etc/cloudflared/creds.json
+ingress:
+  - hostname: monkeyclash.assistantstudent.com
+    service: http://web:80
+  - service: http_status:404

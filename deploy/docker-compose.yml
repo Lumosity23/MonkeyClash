@@ -1,0 +1,80 @@
+# MonkeyClash stack. Run from this folder: docker compose up -d --build
+# Needs deploy/.env (see .env.example) and, for the Cloudflare tunnel,
+# deploy/secrets/tunnel.yml + deploy/secrets/creds.json.
+name: monkeyclash
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        SITE_URL: ${SITE_URL}
+    ports:
+      # handy to test from the LAN, the public access goes through the tunnel
+      - "${LAN_PORT:-8090}:80"
+    depends_on: [tribe, backend]
+    restart: unless-stopped
+
+  tribe:
+    build:
+      context: ..
+      dockerfile: deploy/tribe-server.Dockerfile
+    environment:
+      - CORS_ORIGIN=${SITE_URL}
+      - FINISH_TIMER_SECONDS=${FINISH_TIMER_SECONDS:-30}
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend/Dockerfile
+    environment:
+      - DB_NAME=monkeytype
+      - DB_URI=mongodb://mongodb:27017
+      - REDIS_URI=redis://redis:6379
+      - FRONTEND_URL=${SITE_URL}
+    volumes:
+      - ./backend-configuration.json:/app/backend/dist/backend-configuration.json:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:5.0.13
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 15
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:6.2.6
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 15
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./secrets/tunnel.yml:/etc/cloudflared/config.yml:ro
+      - ./secrets/creds.json:/etc/cloudflared/creds.json:ro
+    depends_on: [web]
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  redis-data:

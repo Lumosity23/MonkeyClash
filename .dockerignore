@@ -21,3 +21,9 @@ frontend/.env
 backend/src/credentials/*.json
 backend/.env
 backend/dist
+
+#monkeyclash
+**/node_modules
+**/dist
+deploy/secrets
+deploy/.env
