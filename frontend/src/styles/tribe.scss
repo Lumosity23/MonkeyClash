@@ -178,6 +178,9 @@
         gap: 2rem;
         .userlist {
           grid-area: auto;
+          .list {
+            max-height: 25rem;
+          }
         }
       }
       .title {

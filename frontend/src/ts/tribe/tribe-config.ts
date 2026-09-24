@@ -141,6 +141,8 @@ export function getTribeConfig(): TribeTypes.RoomConfig {
   });
 
   test.customText = CustomText.getData();
+  // zen is not available in rooms
+  if (test.mode === "zen") test.mode = "time";
   return test as TribeTypes.RoomConfig;
 }
 

@@ -142,12 +142,16 @@ function PuncAndNum(): JSXElement {
 }
 
 function Mode(): JSXElement {
-  const modeOptions = ["time", "words", "quote", "zen", "custom"] as const;
+  const tribeLobby = useContext(TribeLobbyContext);
+  const allModes = ["time", "words", "quote", "zen", "custom"] as const;
+  // no zen in tribe rooms
+  const modeOptions = () =>
+    tribeLobby() ? allModes.filter((m) => m !== "zen") : allModes;
   const modeMeta = configMetadata.mode as ConfigMetadataObject["mode"];
 
   return (
     <div class={cn("z-2", cardClass)}>
-      <For each={modeOptions}>
+      <For each={modeOptions()}>
         {(modeOption) => (
           <TCButton
             fa={modeMeta.optionsMetadata?.[modeOption]?.fa ?? modeMeta.fa}

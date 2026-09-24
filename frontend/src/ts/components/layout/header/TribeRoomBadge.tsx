@@ -33,8 +33,9 @@ export function TribeRoomBadge(): JSXElement {
           fa={{ icon: "fa-link", fixedWidth: true }}
           onClick={() => void copyInviteLink(roomId())}
         >
-          <span>
-            room <span class="text-main">{roomId()}</span>
+          <span class="flex items-baseline gap-[0.5em]">
+            room
+            <span class="text-[2.5em] leading-none text-main">{roomId()}</span>
           </span>
         </Button>
       )}

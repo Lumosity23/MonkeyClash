@@ -25,7 +25,7 @@ import * as TribeTypes from "./types";
 import * as TribeAutoJoin from "./tribe-auto-join";
 import { authPromise } from "../firebase";
 import * as Result from "../test/result";
-import { qs } from "../utils/dom";
+import { qs, qsa } from "../utils/dom";
 import * as Time from "../legacy-states/time";
 
 import { ColorName } from "../constants/themes";
@@ -871,13 +871,11 @@ TribeSocket.in.room.finalPositions((data) => {
   }
 });
 
-qs(`.pageTribe .tribePage.lobby .lobbyButtons .startTestButton,
-  .pageTest #tribeResultBottom .buttons .startTestButton`)?.on(
-  "click",
-  (_e) => {
-    initRace();
-  },
-);
+// qsa: the lobby and the result screen both have a start button
+qsa(`.pageTribe .tribePage.lobby .lobbyButtons .startTestButton,
+  .pageTest #tribeResultBottom .buttons .startTestButton`).on("click", (_e) => {
+  initRace();
+});
 
 qs(".pageTribe .tribePage.preloader button.reconnectButton")?.on(
   "click",

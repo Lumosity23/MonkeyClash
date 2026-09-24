@@ -1,5 +1,10 @@
 import { getRoom, getSelf } from "./tribe-state";
 
+// zen has no end and no shared text, so it makes no sense in a race
+export function isModeAllowedInRoom(mode: unknown): boolean {
+  return getRoom() === undefined || mode !== "zen";
+}
+
 export function canChangeConfig(override: boolean): boolean {
   const room = getRoom();
 

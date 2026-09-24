@@ -73,6 +73,11 @@ export function setConfig<T extends keyof ConfigSchemas.Config>(
     return false;
   }
 
+  if (key === "mode" && !TribeConfigCheck.isModeAllowedInRoom(value)) {
+    showNoticeNotification("Zen mode is not available in tribe rooms");
+    return false;
+  }
+
   if (metadata.isBlocked?.({ value, currentConfig: Config })) {
     console.warn(
       `Could not set config key "${key}" with value "${JSON.stringify(
