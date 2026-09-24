@@ -1,4 +1,8 @@
-import { setIsInARoom } from "../states/tribe";
+import {
+  setIsInARoom,
+  setIsTribeLeader,
+  setTribeRoomId,
+} from "../states/tribe";
 import * as TribeTypes from "./types";
 
 let socketId: string | undefined = undefined;
@@ -8,6 +12,7 @@ let autoReady = false;
 
 export function setSocketId(newSocketId: string | undefined): void {
   socketId = newSocketId;
+  syncSignals();
 }
 
 export function setAutoReady(newAutoReady: boolean): void {
@@ -28,7 +33,14 @@ export function getState(): TribeTypes.ClientState {
 
 export function setRoom(newRoom: TribeTypes.Room | undefined): void {
   room = newRoom;
-  setIsInARoom(newRoom !== undefined);
+  syncSignals();
+}
+
+// room is a plain mutable object, call this after changing who leads it
+export function syncSignals(): void {
+  setIsInARoom(room !== undefined);
+  setTribeRoomId(room?.id);
+  setIsTribeLeader(isLeader());
 }
 
 export function getRoom(): TribeTypes.Room | undefined {

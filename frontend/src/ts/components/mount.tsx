@@ -45,6 +45,7 @@ const components: Record<string, () => JSXElement> = {
   header: () => <Header />,
   devtools: () => <DevTools />,
   testconfig: () => <TestConfig />,
+  tribetestconfig: () => <TestConfig tribeLobby />,
   commandlinehotkey: () => <CommandlineHotkey />,
   testmodesnotice: () => <TestModesNotice />,
   friendspage: () => <FriendsPage />,

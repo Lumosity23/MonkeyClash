@@ -34,6 +34,7 @@ import { NotificationBubble } from "../../common/NotificationBubble";
 import { User } from "../../common/User";
 import { AccountMenu } from "./AccountMenu";
 import { AccountXpBar } from "./AccountXpBar";
+import { TribeRoomBadge } from "./TribeRoomBadge";
 
 export function Nav(): JSXElement {
   const [getAccountMenuOpen, setAccountMenuOpen] = createSignal(false);
@@ -159,6 +160,7 @@ export function Nav(): JSXElement {
         router-link
       />
       <div class="grow"></div>
+      <TribeRoomBadge />
       <Button
         variant="text"
         fa={{

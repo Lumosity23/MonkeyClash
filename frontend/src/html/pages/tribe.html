@@ -126,41 +126,38 @@
   </div>
   <div class="tribePage lobby hidden">
     <div class="tribeBars hidden"></div>
+    <div class="visibilityAndName">
+      <div class="group roomName">
+        <div class="title">room</div>
+        <div class="value">
+          <div class="text">My room</div>
+          <button class="textButton" aria-label="Rename" data-balloon-pos="up">
+            <i class="fa fa-fw fas fa-pencil-alt"></i>
+          </button>
+        </div>
+      </div>
+      <div class="group visibility">
+        <div class="title">visibility</div>
+        <div class="value">
+          <div class="text">private</div>
+          <button
+            class="textButton"
+            aria-label="Toggle visibility"
+            data-balloon-pos="up"
+          >
+            <i class="fa fa-fw fa-lock"></i>
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="currentConfig">
-      <div class="title">
-        current config
+      <mount data-component="tribetestconfig"></mount>
+      <div class="extras">
+        <div class="groups"></div>
         <div class="loadingIndicator hidden">
           <i class="fas fa-fw fa-spin fa-circle-notch"></i>
         </div>
       </div>
-      <div class="groups"></div>
-    </div>
-    <div class="lobbyButtons">
-      <button class="startTestButton">
-        <i class="fas fa-keyboard"></i>
-        Start test
-      </button>
-      <div class="readyButtonGroup">
-        <button class="userReadyButton">
-          <i class="fas fa-check"></i>
-          Ready
-        </button>
-        <button
-          class="autoReadyButton"
-          data-balloon-pos="left"
-          aria-label="Auto ready"
-        >
-          <i class="fas fa-fw fa-magic"></i>
-        </button>
-      </div>
-      <button class="userAfkButton">
-        <i class="fas fa-mug-hot"></i>
-        Take a break
-      </button>
-      <button class="leaveRoomButton">
-        <i class="fas fa-door-open"></i>
-        Leave room
-      </button>
     </div>
     <div class="chat">
       <div class="title">chat</div>
@@ -171,40 +168,38 @@
       </div>
       <div class="whoIsTyping"></div>
     </div>
-    <div class="userlist">
-      <div class="visibilityAndName">
-        <div class="group roomName">
-          <div class="title">name</div>
-          <div class="value">
-            <div class="text">My room</div>
-            <button class="textButton">
-              <i class="fa fa-fw fas fa-pencil-alt"></i>
-            </button>
-          </div>
-        </div>
-        <div class="group visibility">
-          <div class="title">visibility</div>
-          <div class="value">
-            <div class="text">private</div>
-            <button class="textButton">
-              <i class="fa fa-fw fa-lock"></i>
-            </button>
-          </div>
-        </div>
+    <div class="side">
+      <div class="userlist">
+        <div class="title">players</div>
+        <div class="list"></div>
       </div>
-      <div class="title">users</div>
-      <div class="list"></div>
-    </div>
-    <div class="inviteLink">
-      <div class="code">
-        <div class="title">room code</div>
-        <button
-          class="text"
-          aria-label="Click to copy"
-          data-balloon-pos="up"
-        ></button>
+      <div class="lobbyButtons">
+        <button class="startTestButton">
+          <i class="fas fa-keyboard"></i>
+          Start test
+        </button>
+        <div class="readyButtonGroup">
+          <button class="userReadyButton">
+            <i class="fas fa-check"></i>
+            Ready
+          </button>
+          <button
+            class="autoReadyButton"
+            data-balloon-pos="left"
+            aria-label="Auto ready"
+          >
+            <i class="fas fa-fw fa-magic"></i>
+          </button>
+        </div>
+        <button class="userAfkButton">
+          <i class="fas fa-mug-hot"></i>
+          Take a break
+        </button>
+        <button class="leaveRoomButton">
+          <i class="fas fa-door-open"></i>
+          Leave room
+        </button>
       </div>
-      <button class="link textButton"></button>
     </div>
   </div>
 </div>

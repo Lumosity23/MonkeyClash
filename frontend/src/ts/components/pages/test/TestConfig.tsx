@@ -1,4 +1,11 @@
-import { ComponentProps, For, JSXElement, Show } from "solid-js";
+import {
+  ComponentProps,
+  createContext,
+  For,
+  JSXElement,
+  Show,
+  useContext,
+} from "solid-js";
 
 import { configMetadata, ConfigMetadataObject } from "../../../config/metadata";
 import { setConfig, setQuoteLengthAll } from "../../../config/setters";
@@ -9,7 +16,7 @@ import { useRefWithUtils } from "../../../hooks/useRefWithUtils";
 import { isAuthenticated } from "../../../states/core";
 import { showModal } from "../../../states/modals";
 import { getResultVisible, getFocus } from "../../../states/test";
-import { getIsInARoom } from "../../../states/tribe";
+import { getIsInARoom, getIsTribeLeader } from "../../../states/tribe";
 import { FaObject } from "../../../types/font-awesome";
 import { areUnsortedArraysEqual } from "../../../utils/arrays";
 import { cn } from "../../../utils/cn";
@@ -27,17 +34,26 @@ const cardClass =
   "card rounded-(--roundness) bg-sub-alt px-(--horizontal-padding)";
 const durationMs = 250;
 
-export function TestConfig(): JSXElement {
+// true when rendered in a tribe room lobby: the bar shows the room config and
+// only the room leader can change it
+const TribeLobbyContext = createContext<() => boolean>(() => false);
+
+export function TestConfig(props: { tribeLobby?: boolean }): JSXElement {
+  const tribeLobby = (): boolean => props.tribeLobby === true;
+  const hidden = (): boolean =>
+    tribeLobby() ? false : getFocus() || getResultVisible() || getIsInARoom();
+
   return (
-    <>
+    <TribeLobbyContext.Provider value={tribeLobby}>
       <div
         class={cn(
           variables,
-          "group relative mb-8 hidden w-max grid-cols-[1fr_auto_1fr] justify-center place-self-center [font-size:var(--font-size)] md:grid",
+          "group relative hidden w-max grid-cols-[1fr_auto_1fr] justify-center place-self-center [font-size:var(--font-size)] md:grid",
           "mx-auto transition-opacity duration-125",
-          getFocus() || getResultVisible() || getIsInARoom()
-            ? "pointer-events-none opacity-0"
-            : "",
+          { "mb-8": !tribeLobby() },
+          hidden() ? "pointer-events-none opacity-0" : "",
+          // other players see the leader's config without being able to click it
+          tribeLobby() && !getIsTribeLeader() ? "pointer-events-none" : "",
         )}
         data-ui-element="testConfig"
       >
@@ -45,20 +61,22 @@ export function TestConfig(): JSXElement {
         <Mode />
         <Mode2 />
       </div>
-      <Button
-        class={cn(
-          "mx-auto flex place-self-center px-4 py-2 text-sub md:hidden",
-        )}
-        variant="button"
-        onClick={() => {
-          showModal("MobileTestConfig");
-        }}
-        text="test settings"
-        fa={{
-          icon: "fa-cog",
-        }}
-      />
-    </>
+      <Show when={!tribeLobby() || getIsTribeLeader()}>
+        <Button
+          class={cn(
+            "mx-auto flex place-self-center px-4 py-2 text-sub md:hidden",
+          )}
+          variant="button"
+          onClick={() => {
+            showModal("MobileTestConfig");
+          }}
+          text="test settings"
+          fa={{
+            icon: "fa-cog",
+          }}
+        />
+      </Show>
+    </TribeLobbyContext.Provider>
   );
 }
 
@@ -70,6 +88,7 @@ function TCButton(props: {
   disabled?: boolean;
   onClick: () => void;
 }): JSXElement {
+  const tribeLobby = useContext(TribeLobbyContext);
   return (
     <Button
       variant="text"
@@ -78,7 +97,9 @@ function TCButton(props: {
       text={props.text}
       active={props.active}
       onClick={props.onClick}
-      disabled={getFocus() || getResultVisible() || props.disabled}
+      disabled={
+        (!tribeLobby() && (getFocus() || getResultVisible())) || props.disabled
+      }
     />
   );
 }
@@ -147,6 +168,7 @@ function Mode(): JSXElement {
 }
 
 function Mode2(): JSXElement {
+  const tribeLobby = useContext(TribeLobbyContext);
   const [wrapperRef, wrapperElement] = useRefWithUtils();
   const [timeRef, timeElement] = useRefWithUtils();
   const [wordsRef, wordsElement] = useRefWithUtils();
@@ -229,13 +251,15 @@ function Mode2(): JSXElement {
         <Mode2Quote class={cn(cardClass, sClass)} ref={quoteRef} />
         <Mode2Custom class={cn(cardClass, sClass)} ref={customRef} />
       </Anime>
-      <TCButton
-        class={
-          "pointer-events-none absolute right-0 self-center px-(--horizontal-padding) opacity-0 transition-[margin-right,background-color,opacity] duration-125 group-hover:pointer-events-auto group-hover:mr-[calc((1.25em+(var(--horizontal-padding)*2))*-1)] group-hover:opacity-100 hover:mr-[calc((1.25em+(var(--horizontal-padding)*2))*-1)] hover:opacity-100"
-        }
-        fa={{ icon: "fa-share" }}
-        onClick={() => showModal("ShareTestSettings")}
-      />
+      <Show when={!tribeLobby()}>
+        <TCButton
+          class={
+            "pointer-events-none absolute right-0 self-center px-(--horizontal-padding) opacity-0 transition-[margin-right,background-color,opacity] duration-125 group-hover:pointer-events-auto group-hover:mr-[calc((1.25em+(var(--horizontal-padding)*2))*-1)] group-hover:opacity-100 hover:mr-[calc((1.25em+(var(--horizontal-padding)*2))*-1)] hover:opacity-100"
+          }
+          fa={{ icon: "fa-share" }}
+          onClick={() => showModal("ShareTestSettings")}
+        />
+      </Show>
     </div>
   );
 }

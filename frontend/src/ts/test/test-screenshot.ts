@@ -46,7 +46,6 @@ function revert(): void {
   }
 
   if (TribeState.isInARoom()) {
-    qs(".pageTest #result .inviteLink")?.removeClass("hidden");
     qs(".pageTest #result #tribeResultBottom")?.removeClass("hidden");
   }
 }
@@ -89,7 +88,6 @@ async function generateCanvas(): Promise<HTMLCanvasElement | null> {
   setIsScreenshotting(true);
   qs(".pageTest .buttons")?.hide();
   qs(".pageTest .loginTip")?.hide();
-  qs(".pageTest #result .inviteLink")?.addClass("hidden");
   qs(".pageTest #result #tribeResultBottom")?.addClass("hidden");
   qs("noscript")?.hide();
   qs("#nocss")?.hide();

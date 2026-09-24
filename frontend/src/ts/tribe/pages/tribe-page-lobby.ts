@@ -3,23 +3,12 @@ import * as TribeUserList from "../tribe-user-list";
 import * as TribeButtons from "../tribe-buttons";
 import tribeSocket from "../tribe-socket";
 import { RoomConfig } from "../types";
-import { configMetadata } from "../../config/metadata";
 import { qsa, qsr } from "../../utils/dom";
-import {
-  showErrorNotification,
-  showSuccessNotification,
-} from "../../states/notifications";
 import { showSimpleModal } from "../../states/simple-modal";
 import { z } from "zod";
 
 const configButtonEls = qsa(
   ".pageTribe .tribePage.lobby .currentConfig button",
-);
-const roomCodeEls = qsa(
-  ".pageTribe .tribePage.lobby .inviteLink .code .text, .pageTest #result #tribeResultBottom .inviteLink .code .text",
-);
-const roomLinkEls = qsa(
-  ".pageTribe .tribePage.lobby .inviteLink .link, .pageTest #result #tribeResultBottom .inviteLink .link",
 );
 const visibilityButtonEl = qsr(
   ".pageTribe .tribePage.lobby .visibilityAndName .visibility button",
@@ -36,11 +25,6 @@ const roomNameTextEl = qsr(
 const currentConfigGroupEls = qsr(
   ".pageTribe .tribePage.lobby .currentConfig .groups",
 );
-
-export function reset(): void {
-  roomCodeEls.setText("");
-  roomLinkEls.setText("");
-}
 
 export function disableConfigButtons(): void {
   configButtonEls.disable();
@@ -251,6 +235,19 @@ const configOrder: Record<
   // },
 } as const;
 
+// already shown by the test config bar above
+const shownInConfigBar = new Set<string>([
+  "mode",
+  "words",
+  "time",
+  "quoteLength",
+  "customText",
+  "punctuation",
+  "numbers",
+]);
+
+// Lists the room settings that the test config bar doesn't show, skipping the
+// ones left at their default so the line stays short.
 export function updateRoomConfig(): void {
   const room = TribeState.getRoom();
   if (!room) return;
@@ -258,15 +255,24 @@ export function updateRoomConfig(): void {
 
   let html = ``;
   for (const [key, value] of Object.entries(configOrder)) {
+    if (shownInConfigBar.has(key)) continue;
     if (value.showIf && !value.showIf(room.config)) continue;
-
-    // @ts-expect-error ok for now
-    // oxlint-disable-next-line no-unsafe-assignment no-unsafe-member-access
-    const icon = configMetadata[key].icon;
+    const text = value.text(room.config);
+    if (key !== "language" && ["off", "none", "normal"].includes(text)) {
+      continue;
+    }
 
     html += `
     <button class='text group' aria-label="${value.label}" data-balloon-pos="up" data-commands-key="${value.commandsKey}">
-    <i class="fas ${icon}"></i>${value.text(room.config)}
+    <i class="${value.icon}"></i>${text.replace(/_/g, " ")}
+    </button>
+    `;
+  }
+
+  if (TribeState.isLeader()) {
+    html += `
+    <button class='text group more' aria-label="All test settings" data-balloon-pos="up" data-commands-key="">
+    <i class="fas fa-sliders-h"></i>more settings
     </button>
     `;
   }
@@ -277,11 +283,6 @@ export function updateRoomConfig(): void {
 export async function init(): Promise<void> {
   const room = TribeState.getRoom();
   if (!room) return;
-  reset();
-  const link = `${location.origin}/tribe/${room.id}`;
-  roomCodeEls.setText(room.id);
-  roomLinkEls.setText(link);
-
   TribeUserList.update("lobby");
   TribeButtons.update();
   updateVisibility();
@@ -290,28 +291,6 @@ export async function init(): Promise<void> {
   enableConfigButtons();
   enableNameVisibilityButtons();
 }
-
-roomCodeEls
-  .on("mouseenter", function (e) {
-    if (e.currentTarget !== null) {
-      (e.currentTarget as HTMLElement).style.color =
-        `#${(e.currentTarget as HTMLElement).innerText}`;
-    }
-  })
-  .on("mouseleave", function (e) {
-    if (e.currentTarget !== null) {
-      (e.currentTarget as HTMLElement).style.color = "";
-    }
-  });
-
-roomLinkEls.on("click", async () => {
-  try {
-    await navigator.clipboard.writeText(roomLinkEls[0]?.native.innerText ?? "");
-    showSuccessNotification("Code copied");
-  } catch (e) {
-    showErrorNotification(`Could not copy to clipboard: ${String(e)}`);
-  }
-});
 
 visibilityButtonEl.on("click", () => {
   tribeSocket.out.room.toggleVisibility();

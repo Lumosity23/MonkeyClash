@@ -58,10 +58,6 @@ export const expectedVersion = isDevEnvironment() ? "dev" : "25.12.4";
 
 function updateClientState(state: TribeTypes.ClientState): void {
   TribeState.setState(state);
-
-  qs("#tribeStateDisplay")?.setText(
-    `${TribeState.getState()} - ${TribeState.getRoom()?.state}`,
-  );
 }
 
 function updateRoomState(state: TribeTypes.RoomState): void {
@@ -73,9 +69,6 @@ function updateRoomState(state: TribeTypes.RoomState): void {
   }
 
   TribeButtons.update();
-  qs("#tribeStateDisplay")?.setText(
-    `${TribeState.getState()} - ${TribeState.getRoom()?.state}`,
-  );
 
   if (state === TribeTypes.ROOM_STATE.LOBBY) {
     TribePageLobby.enableNameVisibilityButtons();
@@ -172,7 +165,6 @@ async function reset(): Promise<void> {
   TribeChat.reset("lobby");
   TribeChat.reset("result");
   TribeBars.hide();
-  TribePageLobby.reset();
   TribeBars.reset();
 }
 
@@ -499,6 +491,7 @@ TribeSocket.in.room.leaderChanged((data) => {
   user.isLeader = true;
   user.isAfk = false;
   user.isReady = false;
+  TribeState.syncSignals();
   TribeUserList.update();
   TribeButtons.update();
   TribePageLobby.updateVisibility();

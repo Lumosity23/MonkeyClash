@@ -7,9 +7,16 @@ qs(".pageTribe .tribePage.lobby .currentConfig")?.onChild(
   "click",
   "button",
   (e) => {
-    const command = (e.target as HTMLElement).getAttribute("data-commands-key");
-    if (command === null) return;
+    const command = (e.childTarget as HTMLElement | null)?.getAttribute(
+      "data-commands-key",
+    );
+    // buttons of the test config bar have no commands key
+    if (command === undefined || command === null) return;
     if (!TribeState.isLeader()) return;
+    if (command === "") {
+      Commandline.show();
+      return;
+    }
     Commandline.show({ subgroupOverride: command as ConfigKey });
   },
 );
