@@ -1,0 +1,22 @@
+{
+  "name": "@monkeyclash/tribe-server",
+  "private": true,
+  "license": "GPL-3.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts",
+    "test": "vitest run",
+    "ts-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "socket.io": "4.8.3"
+  },
+  "devDependencies": {
+    "@monkeytype/typescript-config": "workspace:*",
+    "@types/node": "24.9.1",
+    "socket.io-client": "4.8.3",
+    "typescript": "6.0.2",
+    "vitest": "4.1.0"
+  }
+}

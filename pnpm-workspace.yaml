@@ -1,6 +1,7 @@
 packages:
   - frontend
   - backend
+  - tribe-server
   - packages/*
   - frontend/storybook
 
