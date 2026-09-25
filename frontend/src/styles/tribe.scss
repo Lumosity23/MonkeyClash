@@ -166,15 +166,17 @@
       display: grid;
       grid-template-areas:
         "players players"
-        "roomheader roomheader"
-        "currentconfig currentconfig"
+        "currentconfig side"
         "chat side";
       gap: 2rem;
       grid-template-columns: 3fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      // MonkeyClash: config top left, buttons and players top right, room
+      // name and visibility at the bottom of the side
       .side {
         grid-area: side;
-        display: grid;
-        align-content: start;
+        display: flex;
+        flex-direction: column;
         gap: 2rem;
         .userlist {
           grid-area: auto;
@@ -207,8 +209,9 @@
         }
       }
       .visibilityAndName {
-        grid-area: roomheader;
+        margin-top: auto;
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
         gap: 1rem;
         .visibility {
@@ -243,7 +246,7 @@
         grid-area: currentconfig;
         display: grid;
         gap: 0.5rem;
-        justify-items: center;
+        justify-items: start;
         // settings the config bar doesn't show (language, funbox, ...)
         .extras {
           display: flex;
@@ -253,7 +256,7 @@
         .groups {
           display: flex;
           flex-wrap: wrap;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 0.25rem 1rem;
           button {
             color: var(--sub-color);

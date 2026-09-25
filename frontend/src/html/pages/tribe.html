@@ -135,30 +135,6 @@
   </div>
   <div class="tribePage lobby hidden">
     <div class="tribeBars hidden"></div>
-    <div class="visibilityAndName">
-      <div class="group roomName">
-        <div class="title">room</div>
-        <div class="value">
-          <div class="text">My room</div>
-          <button class="textButton" aria-label="Rename" data-balloon-pos="up">
-            <i class="fa fa-fw fas fa-pencil-alt"></i>
-          </button>
-        </div>
-      </div>
-      <div class="group visibility">
-        <div class="title">visibility</div>
-        <div class="value">
-          <div class="text">private</div>
-          <button
-            class="textButton"
-            aria-label="Toggle visibility"
-            data-balloon-pos="up"
-          >
-            <i class="fa fa-fw fa-lock"></i>
-          </button>
-        </div>
-      </div>
-    </div>
     <div class="currentConfig">
       <mount data-component="tribetestconfig"></mount>
       <div class="extras">
@@ -208,6 +184,35 @@
       <div class="userlist">
         <div class="title">players</div>
         <div class="list"></div>
+      </div>
+      <!-- MonkeyClash: room name and visibility at the bottom of the side -->
+      <div class="visibilityAndName">
+        <div class="group roomName">
+          <div class="title">room</div>
+          <div class="value">
+            <div class="text">My room</div>
+            <button
+              class="textButton"
+              aria-label="Rename"
+              data-balloon-pos="up"
+            >
+              <i class="fa fa-fw fas fa-pencil-alt"></i>
+            </button>
+          </div>
+        </div>
+        <div class="group visibility">
+          <div class="title">visibility</div>
+          <div class="value">
+            <div class="text">private</div>
+            <button
+              class="textButton"
+              aria-label="Toggle visibility"
+              data-balloon-pos="up"
+            >
+              <i class="fa fa-fw fa-lock"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
