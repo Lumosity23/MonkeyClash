@@ -75,7 +75,10 @@ type LoggedOut = {
   | {}
 );
 
-export type ResultResolve = LoggedInDontSave | LoggedInSave | LoggedOut;
+export type ResultResolve = (LoggedInDontSave | LoggedInSave | LoggedOut) & {
+  // MonkeyClash: set by the server when the result passed its anticheat
+  verified?: boolean;
+};
 
 export type RoomJoin = {
   room: Room;

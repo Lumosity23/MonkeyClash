@@ -282,6 +282,15 @@ function updateUser(page: string, userId: string): void {
         otherText = "new pb";
       }
       userEl?.qs(`.other .text`)?.setText(otherText);
+
+      // MonkeyClash: the server checked this result
+      if (resolve.verified === true && !userEl?.qs(".name .verified")) {
+        userEl
+          ?.qs(".name")
+          ?.appendHtml(
+            `<span class="verified text-sub" aria-label="verified by the server" data-balloon-pos="up"><i class="fas fa-fw fa-check-circle"></i></span>`,
+          );
+      }
     }
   }
 }

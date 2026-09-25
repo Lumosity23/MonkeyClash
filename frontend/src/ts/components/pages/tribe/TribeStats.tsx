@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from "../../../firebase";
 import { getActivePage } from "../../../states/core";
 import { getSnapshot } from "../../../states/snapshot";
 import { cn } from "../../../utils/cn";
+import { Fa } from "../../common/Fa";
 
 // Duel stats served by the MonkeyClash tribe server (tribe-server/src/stats-api.ts)
 
@@ -18,6 +19,8 @@ type PlayerStats = {
   points: number;
   bestWpm: number;
   avgWpm: number;
+  // races the anticheat rejected
+  flaggedRaces: number;
 };
 
 type Opponent = {
@@ -117,7 +120,7 @@ function Stat(props: { label: string; value: string }): JSXElement {
 
 function MyStats(props: { stats: PlayerStats }): JSXElement {
   return (
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
       <Stat label="races" value={`${props.stats.races}`} />
       <Stat label="wins" value={`${props.stats.wins}`} />
       <Stat label="win rate" value={winRate(props.stats)} />
@@ -125,6 +128,7 @@ function MyStats(props: { stats: PlayerStats }): JSXElement {
       <Stat label="points" value={`${props.stats.points}`} />
       <Stat label="best wpm" value={`${round(props.stats.bestWpm)}`} />
       <Stat label="avg wpm" value={`${round(props.stats.avgWpm)}`} />
+      <Stat label="rejected" value={`${props.stats.flaggedRaces}`} />
     </div>
   );
 }
@@ -149,6 +153,34 @@ function HeadToHead(props: { opponent: Opponent }): JSXElement {
         <div class="h-full bg-main" style={{ width: `${share()}%` }}></div>
       </div>
     </div>
+  );
+}
+
+// every race verified, or how many the anticheat rejected
+function AnticheatBadge(props: { player: PlayerStats }): JSXElement {
+  return (
+    <Show
+      when={props.player.flaggedRaces > 0}
+      fallback={
+        <span
+          class="text-sub"
+          aria-label="every race verified by the server"
+          data-balloon-pos="up"
+        >
+          <Fa icon="fa-check-circle" />
+        </span>
+      }
+    >
+      <span
+        class="text-error"
+        aria-label={`${props.player.flaggedRaces} race${
+          props.player.flaggedRaces > 1 ? "s" : ""
+        } rejected by the anticheat`}
+        data-balloon-pos="up"
+      >
+        <Fa icon="fa-exclamation-triangle" /> {props.player.flaggedRaces}
+      </span>
+    </Show>
   );
 }
 
@@ -197,7 +229,9 @@ function Leaderboard(props: {
                   })}
                 >
                   <td class="rounded-l px-4 py-2">{index() + 1}</td>
-                  <td class="px-4 py-2">{player.name}</td>
+                  <td class="px-4 py-2">
+                    {player.name} <AnticheatBadge player={player} />
+                  </td>
                   <td class="px-4 py-2">{player.points}</td>
                   <td class="px-4 py-2">{player.races}</td>
                   <td class="px-4 py-2">{player.wins}</td>
