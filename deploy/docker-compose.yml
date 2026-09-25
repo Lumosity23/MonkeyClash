@@ -25,6 +25,18 @@ services:
     environment:
       - CORS_ORIGIN=${SITE_URL}
       - FINISH_TIMER_SECONDS=${FINISH_TIMER_SECONDS:-30}
+      # duel stats and account check, same database and key as the backend
+      - MONGO_URI=mongodb://mongodb:27017
+      - DB_NAME=monkeytype
+      - FIREBASE_SERVICE_ACCOUNT=/run/secrets/serviceAccountKey.json
+    volumes:
+      - type: bind
+        source: ./secrets/serviceAccountKey.json
+        target: /run/secrets/serviceAccountKey.json
+        read_only: true
+    depends_on:
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
 
   backend:

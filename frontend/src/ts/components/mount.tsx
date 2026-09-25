@@ -26,6 +26,7 @@ import { Keymap } from "./pages/test/Keymap";
 import { TestModesNotice } from "./pages/test/modes-notice/TestModesNotice";
 import { Monkey } from "./pages/test/Monkey";
 import { TestConfig } from "./pages/test/TestConfig";
+import { TribeStats } from "./pages/tribe/TribeStats";
 import { Popups } from "./popups/Popups";
 
 const components: Record<string, () => JSXElement> = {
@@ -46,6 +47,7 @@ const components: Record<string, () => JSXElement> = {
   devtools: () => <DevTools />,
   testconfig: () => <TestConfig />,
   tribetestconfig: () => <TestConfig tribeLobby />,
+  tribestats: () => <TribeStats />,
   commandlinehotkey: () => <CommandlineHotkey />,
   testmodesnotice: () => <TestModesNotice />,
   friendspage: () => <FriendsPage />,

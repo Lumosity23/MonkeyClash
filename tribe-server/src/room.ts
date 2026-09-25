@@ -1,5 +1,6 @@
 import type { Server } from "socket.io";
-import { computeOutcome } from "./positions.ts";
+import { computeOutcome, type RaceOutcome } from "./positions.ts";
+import type { RaceRecord } from "./stats.ts";
 import {
   ROOM_STATE,
   type ProgressIn,
@@ -10,7 +11,14 @@ import {
   type RoomState,
   type User,
 } from "./types.ts";
-import { escapeHTML, newSeed } from "./utils.ts";
+import { escapeHTML, isResultValid, newSeed } from "./utils.ts";
+
+export type RoomHooks = {
+  // account of a player (undefined for guests)
+  uidOf?: (socketId: string) => string | undefined;
+  // called once per finished race with at least two players
+  onRaceFinished?: (record: RaceRecord) => void;
+};
 
 export type Timings = {
   // how often the server asks for and broadcasts live progress
@@ -60,6 +68,12 @@ export class Room {
   private raceTimers: NodeJS.Timeout[] = [];
   private progressTicker: NodeJS.Timeout | undefined;
   private extremes = { maxWpm: 0, maxRaw: 0, minWpm: 0, minRaw: 0 };
+  private readonly hooks: RoomHooks;
+  // who started the current race, kept even if they leave before the end
+  private readonly participants = new Map<
+    string,
+    { name: string; uid: string | undefined }
+  >();
 
   constructor(
     io: Server,
@@ -67,9 +81,11 @@ export class Room {
     id: string,
     leader: User,
     config: RoomConfig,
+    hooks: RoomHooks = {},
   ) {
     this.io = io;
     this.timings = timings;
+    this.hooks = hooks;
     this.id = id;
     this.name = `${leader.name}'s room`;
     this.config = config;
@@ -235,6 +251,7 @@ export class Room {
 
     // the leader and every ready, non-afk player takes part
     const typing: Record<string, { isTyping: boolean }> = {};
+    this.participants.clear();
     for (const user of this.users.values()) {
       const takesPart =
         (user.isLeader === true || user.isReady === true) &&
@@ -243,7 +260,13 @@ export class Room {
       delete user.progress;
       delete user.isFinished;
       user.isTyping = takesPart;
-      if (takesPart) user.isFinished = false;
+      if (takesPart) {
+        user.isFinished = false;
+        this.participants.set(user.id, {
+          name: user.name,
+          uid: this.hooks.uidOf?.(user.id),
+        });
+      }
       typing[user.id] = { isTyping: takesPart };
     }
     this.seed = newSeed();
@@ -394,10 +417,60 @@ export class Room {
       positions: outcome.positions,
       miniCrowns: outcome.miniCrowns,
     });
+    this.recordRace(outcome);
     this.setState(ROOM_STATE.SHOWING_RESULTS);
     this.schedule(this.timings.showResultsMs, () =>
       this.setState(ROOM_STATE.READY_TO_CONTINUE),
     );
+  }
+
+  // Hands the finished race to the stats. Players who left mid-race count as
+  // having no result, so quitting doesn't dodge a loss.
+  private recordRace(outcome: RaceOutcome): void {
+    if (!this.hooks.onRaceFinished || this.participants.size < 2) return;
+
+    const placement = new Map<string, { position: number; points: number }>();
+    for (const [position, entries] of Object.entries(outcome.positions)) {
+      for (const entry of entries) {
+        placement.set(entry.id, {
+          position: Number(position),
+          points: entry.newPoints,
+        });
+      }
+    }
+
+    const mode = this.config["mode"];
+    const mode2 =
+      mode === "time"
+        ? this.config["time"]
+        : mode === "words"
+          ? this.config["words"]
+          : undefined;
+    const language = this.config["language"];
+
+    this.hooks.onRaceFinished({
+      roomId: this.id,
+      timestamp: Date.now(),
+      mode: typeof mode === "string" ? mode : undefined,
+      mode2:
+        typeof mode2 === "number" || typeof mode2 === "string"
+          ? String(mode2)
+          : undefined,
+      language: typeof language === "string" ? language : undefined,
+      players: [...this.participants].map(([id, participant]) => {
+        const result = this.users.get(id)?.result;
+        const placed = placement.get(id);
+        return {
+          uid: participant.uid,
+          name: participant.name,
+          valid: isResultValid(result),
+          wpm: result?.wpm,
+          acc: result?.acc,
+          position: placed?.position,
+          points: placed?.points ?? 0,
+        };
+      }),
+    });
   }
 
   // ---------------------------------------------------------------- helpers

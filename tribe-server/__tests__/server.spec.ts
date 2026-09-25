@@ -3,6 +3,7 @@ import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTribeServer } from "../src/server.ts";
+import { MemoryStatsStore } from "../src/stats.ts";
 import type {
   FinalPositions,
   PublicRoomData,
@@ -22,11 +23,25 @@ const TIMINGS = {
 
 let url: string;
 let close: () => Promise<void>;
+let stats: MemoryStatsStore;
 const clients: Socket[] = [];
+
+// "token-<name>" is a valid account token for the account "uid-<name>"
+async function authenticate(
+  token: string,
+): Promise<{ uid: string; name: string } | undefined> {
+  const name = /^token-(\w+)$/.exec(token)?.[1];
+  return name === undefined ? undefined : { uid: `uid-${name}`, name };
+}
 
 beforeEach(async () => {
   const httpServer = createServer();
-  ({ close } = createTribeServer(httpServer, { timings: TIMINGS }));
+  stats = new MemoryStatsStore();
+  ({ close } = createTribeServer(httpServer, {
+    timings: TIMINGS,
+    authenticate,
+    stats,
+  }));
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   url = `http://localhost:${(httpServer.address() as AddressInfo).port}`;
 });
@@ -39,9 +54,10 @@ afterEach(async () => {
 // connected players, with the name the server assigned them
 const names = new WeakMap<Socket, string>();
 
-async function player(name: string): Promise<Socket> {
+async function player(name: string, token?: string): Promise<Socket> {
   const socket = connect(url, {
     query: { name },
+    auth: token === undefined ? {} : { token },
     transports: ["websocket"],
     forceNew: true,
   });
@@ -109,13 +125,13 @@ function autoProgress(socket: Socket, wpm: number): void {
   });
 }
 
-async function duelRoom(): Promise<{
+async function duelRoom(logged = false): Promise<{
   alice: Socket;
   bob: Socket;
   room: RoomData;
 }> {
-  const alice = await player("alice");
-  const bob = await player("bob");
+  const alice = await player("alice", logged ? "token-alice" : undefined);
+  const bob = await player("bob", logged ? "token-bob" : undefined);
   const joined = once<{ room: RoomData }>(alice, "room_joined");
   alice.emit("room_create", { config: { mode: "words", words: 10 } });
   const { room } = await joined;
@@ -317,11 +333,11 @@ describe("tribe server", () => {
 
   it("counts all rooms and public rooms separately", async () => {
     const { bob } = await duelRoom();
-    const stats = (await bob.emitWithAck("system_stats")) as {
+    const systemStats = (await bob.emitWithAck("system_stats")) as {
       stats: [number, { custom: [number, number] }];
     };
     // one private room: counted in "create room", not in "browse public rooms"
-    expect(stats.stats[1].custom).toEqual([1, 0]);
+    expect(systemStats.stats[1].custom).toEqual([1, 0]);
   });
 
   it("lists public rooms only", async () => {
@@ -343,5 +359,88 @@ describe("tribe server", () => {
     expect(rooms).toMatchObject([
       { id: room.id, name: "alice's room", size: 2 },
     ]);
+  });
+});
+
+describe("duel stats", () => {
+  // waits for the race to be over and its stats saved
+  async function raceOver(socket: Socket): Promise<void> {
+    await once(socket, "room_final_positions");
+    await new Promise((r) => setTimeout(r, 20));
+  }
+
+  it("takes the name from the account, not from the client", async () => {
+    expect(names.get(await player("hacker", "token-alice"))).toBe("alice");
+    // an invalid token plays as a guest
+    expect(names.get(await player("carl", "not-a-token"))).toBe("carl");
+  });
+
+  it("does not let an account rename itself", async () => {
+    const alice = await player("alice", "token-alice");
+    const notice = once<{ message: string }>(alice, "system_notification");
+    alice.emit("user_set_name", { name: "mallory" });
+    expect((await notice).message).toBe("Your name comes from your account");
+  });
+
+  it("records a finished duel for both accounts", async () => {
+    const { alice, bob } = await duelRoom(true);
+    await startRace(alice, bob);
+    const over = raceOver(alice);
+    alice.emit("room_result", { result: result(110) });
+    bob.emit("room_result", { result: result(88) });
+    await over;
+
+    expect(stats.races).toHaveLength(1);
+    expect(stats.races[0]).toMatchObject({
+      mode: "words",
+      mode2: "10",
+      players: [
+        { uid: "uid-alice", name: "alice", position: 1, points: 1, wpm: 110 },
+        { uid: "uid-bob", name: "bob", position: 2, points: 0, wpm: 88 },
+      ],
+    });
+    const [leader] = await stats.leaderboard(10);
+    expect(leader).toMatchObject({ uid: "uid-alice", wins: 1, points: 1 });
+    expect((await stats.user("uid-bob"))?.opponents).toEqual([
+      {
+        uid: "uid-alice",
+        name: "alice",
+        races: 1,
+        wins: 0,
+        losses: 1,
+        draws: 0,
+      },
+    ]);
+  });
+
+  it("counts a rage quit as a loss", async () => {
+    const { alice, bob } = await duelRoom(true);
+    await startRace(alice, bob);
+    bob.disconnect();
+    const over = raceOver(alice);
+    alice.emit("room_result", { result: result(100) });
+    await over;
+
+    expect(stats.races[0]?.players).toMatchObject([
+      { uid: "uid-alice", position: 1 },
+      { uid: "uid-bob", position: undefined, valid: false },
+    ]);
+    expect((await stats.user("uid-alice"))?.opponents[0]).toMatchObject({
+      uid: "uid-bob",
+      wins: 1,
+      losses: 0,
+    });
+  });
+
+  it("records guest races without giving anyone stats", async () => {
+    const { alice, bob } = await duelRoom(false);
+    await startRace(alice, bob);
+    const over = raceOver(alice);
+    alice.emit("room_result", { result: result(100) });
+    bob.emit("room_result", { result: result(90) });
+    await over;
+
+    expect(stats.races).toHaveLength(1);
+    expect(await stats.leaderboard(10)).toEqual([]);
   });
 });

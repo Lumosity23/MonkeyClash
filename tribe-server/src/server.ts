@@ -1,6 +1,8 @@
 import type { Server as HttpServer } from "node:http";
 import { Server, type DefaultEventsMap, type Socket } from "socket.io";
+import type { Authenticate } from "./auth.ts";
 import { DEFAULT_TIMINGS, Room, type Timings } from "./room.ts";
+import type { StatsStore } from "./stats.ts";
 import {
   guestName,
   isRecord,
@@ -19,6 +21,10 @@ export type TribeServerOptions = {
   corsOrigin: string[] | true;
   maxUsersPerRoom: number;
   timings: Timings;
+  // verifies the account token sent by logged in players (guests otherwise)
+  authenticate?: Authenticate;
+  // where finished races are recorded for the duel stats
+  stats?: StatsStore;
 };
 
 export const DEFAULT_OPTIONS: TribeServerOptions = {
@@ -34,6 +40,8 @@ const MAX_CONFIG_BYTES = 200_000;
 
 type SocketData = {
   name: string;
+  // account of a logged in player
+  uid: string | undefined;
   roomId: string | undefined;
   lastChatAt: number;
 };
@@ -62,6 +70,32 @@ export function createTribeServer(
   });
   const rooms = new Map<string, Room>();
 
+  // logged in players send their firebase token, the account decides the name
+  const identify = async (socket: TribeSocket): Promise<void> => {
+    const token: unknown = socket.handshake.auth["token"];
+    if (typeof token !== "string" || !opts.authenticate) return;
+    const identity = await opts.authenticate(token).catch(() => undefined);
+    if (identity) {
+      socket.data.uid = identity.uid;
+      socket.data.name = sanitizeName(identity.name) ?? guestName();
+    }
+  };
+  io.use(async (socket, next) => {
+    await identify(socket);
+    next();
+  });
+
+  const roomHooks = {
+    uidOf: (socketId: string) => io.sockets.sockets.get(socketId)?.data.uid,
+    onRaceFinished: opts.stats
+      ? (record: Parameters<StatsStore["saveRace"]>[0]) => {
+          opts.stats?.saveRace(record).catch((error: unknown) => {
+            console.error("[tribe] could not save race stats", error);
+          });
+        }
+      : undefined,
+  };
+
   function roomOf(socket: TribeSocket): Room | undefined {
     const { roomId } = socket.data;
     return roomId === undefined ? undefined : rooms.get(roomId);
@@ -85,11 +119,15 @@ export function createTribeServer(
   io.on("connection", (rawSocket) => {
     const socket: TribeSocket = rawSocket;
     const requested = sanitizeName(socket.handshake.query["name"]);
+    const account = socket.data.uid;
     socket.data = {
       name:
-        requested === undefined || requested === "Guest"
-          ? guestName()
-          : requested,
+        account !== undefined
+          ? socket.data.name
+          : requested === undefined || requested === "Guest"
+            ? guestName()
+            : requested,
+      uid: account,
       roomId: undefined,
       lastChatAt: 0,
     };
@@ -160,6 +198,10 @@ export function createTribeServer(
         notify(socket, "Invalid name");
         return;
       }
+      if (socket.data.uid !== undefined) {
+        notify(socket, "Your name comes from your account", 0);
+        return;
+      }
       if (socket.data.roomId !== undefined) {
         notify(socket, "Leave the room to change your name", 0);
         return;
@@ -199,6 +241,7 @@ export function createTribeServer(
         newRoomId((id) => rooms.has(id)),
         { id: socket.id, name: socket.data.name },
         config,
+        roomHooks,
       );
       rooms.set(room.id, room);
       socket.data.roomId = room.id;
