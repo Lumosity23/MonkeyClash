@@ -1,6 +1,7 @@
 import { createResource, For, JSXElement, Show, type Resource } from "solid-js";
 import { envConfig } from "virtual:env-config";
 
+import { getAuthenticatedUser } from "../../../firebase";
 import { getActivePage } from "../../../states/core";
 import { getSnapshot } from "../../../states/snapshot";
 import { cn } from "../../../utils/cn";
@@ -47,10 +48,12 @@ export function TribeStats(): JSXElement {
   // undefined while the page is closed, so every visit fetches fresh stats
   const onTribePage = (): true | undefined =>
     getActivePage() === "tribe" ? true : undefined;
-  const myUid = (): string | undefined => {
-    const uid = getSnapshot()?.uid;
-    return onTribePage() && uid !== undefined && uid !== "" ? uid : undefined;
-  };
+  // the snapshot is set once logged in (its own uid field stays empty), the
+  // uid comes from the firebase user
+  const loggedUid = (): string | undefined =>
+    getSnapshot() !== undefined ? getAuthenticatedUser()?.uid : undefined;
+  const myUid = (): string | undefined =>
+    onTribePage() ? loggedUid() : undefined;
 
   const [leaderboard] = createResource(onTribePage, async () =>
     getJson<{ players: PlayerStats[] }>("/leaderboard"),
@@ -98,7 +101,7 @@ export function TribeStats(): JSXElement {
         </div>
       </Show>
 
-      <Leaderboard leaderboard={leaderboard} myUid={getSnapshot()?.uid} />
+      <Leaderboard leaderboard={leaderboard} myUid={loggedUid()} />
     </div>
   );
 }
