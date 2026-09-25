@@ -7,6 +7,18 @@
       "signUp": true,
       "profiles": {
         "enabled": true
+      },
+      "xp": {
+        "enabled": true,
+        "gainMultiplier": 1,
+        "funboxBonus": 0.25,
+        "maxDailyBonus": 1000,
+        "minDailyBonus": 100,
+        "streak": {
+          "enabled": true,
+          "maxStreakDays": 10,
+          "maxStreakMultiplier": 0.5
+        }
       }
     },
     "dailyLeaderboards": {
