@@ -382,6 +382,21 @@ describe("duel stats", () => {
     expect((await notice).message).toBe("Your name comes from your account");
   });
 
+  it("keeps one connection per account, the newest tab wins", async () => {
+    const first = await player("alice", "token-alice");
+    const notice = once<{ message: string }>(first, "system_notification");
+    const kicked = once(first, "disconnect");
+    const second = await player("alice", "token-alice");
+    expect((await notice).message).toBe(
+      "Your account connected from another tab",
+    );
+    await kicked;
+    expect(second.connected).toBe(true);
+    // guests are not limited
+    const guests = [await player("carl"), await player("carl")];
+    expect(guests.every((g) => g.connected)).toBe(true);
+  });
+
   it("records a finished duel for both accounts", async () => {
     const { alice, bob } = await duelRoom(true);
     await startRace(alice, bob);

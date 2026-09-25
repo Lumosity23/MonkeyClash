@@ -133,6 +133,16 @@ export function createTribeServer(
     };
     socket.emit("user_update_name", { name: socket.data.name });
 
+    // one connection per account, or a player could fill a room with tabs of
+    // their own account and farm wins: the newest tab takes over
+    if (account !== undefined) {
+      for (const other of io.sockets.sockets.values()) {
+        if (other.id === socket.id || other.data.uid !== account) continue;
+        notify(other, "Your account connected from another tab");
+        other.disconnect(true);
+      }
+    }
+
     // Registers a handler that never takes the server down on a bad payload.
     const on = (event: string, handler: (...args: unknown[]) => void): void => {
       socket.on(event, (...args: unknown[]) => {
