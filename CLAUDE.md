@@ -6,4 +6,4 @@ For typechecking, use `pnpm oxlint --type-aware --type-check` instead of `tsc`.
 For styling, use Tailwind CSS, class property, `cn` utility. Do not use classlist. Only colors available are those defined in Tailwind config.
 In legacy code, use `i` tags with FontAwesome classes. In new code, use `Fa` component.
 In plan mode, before writing up a plan, ask clarifying questions if needed. At the end of plan mode, give me a list of unresolved questions to answer, if any. Make them concise.
-This is MonkeyClash, a fork. Read docs/MONKEYCLASH.md first: architecture, deploy, upstream tribe branch pitfalls, roadmap.
+This is MonkeyClash, a fork. Read docs/MONKEYCLASH.md first: architecture, deploy, upstream tribe branch pitfalls, roadmap. Private ops notes (not in git) are in docs/MONKEYCLASH.private.md if present. The repo is public: never commit personal data (IPs, emails, discussion notes).

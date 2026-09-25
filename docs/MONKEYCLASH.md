@@ -6,7 +6,7 @@ MonkeyClash est un fork de [Monkeytype](https://github.com/monkeytypegame/monkey
 
 - **Site** : https://monkeyclash.assistantstudent.com (duels sur `/tribe`)
 - **Repo** : https://github.com/Lumosity23/MonkeyClash, branche `monkeyclash`, construite sur la branche upstream `newtribemerge`
-- **Serveur** : `192.168.129.93` (Debian 13, Docker), dossier `~/monkeyclash`
+- **Hébergement** : un serveur Docker (`deploy/`) exposé par un tunnel Cloudflare
 
 ## Architecture
 
@@ -26,8 +26,9 @@ Tout est décrit dans `deploy/docker-compose.yml` : `web`, `tribe`, `backend`, `
 - **Duels** : salons privés ou publics avec un code à 6 caractères. Le chef choisit la config avec la barre de Monkeytype. Ensuite : compte à rebours, curseurs adverses en direct, résultats, positions, points, couronnes et chat (@mentions, emojis). Et « Next test » pour la revanche.
 - **Serveur Tribe** (`tribe-server/`) : il implémente le protocole du client Tribe, reconstitué à partir de son code. Node 24 exécute directement le TypeScript. Tout est en mémoire, et un redémarrage ferme les salons. Il y a 29 tests (`pnpm test`).
 - **Comptes** (Firebase) : inscription et connexion, résultats sauvegardés, records, profil public et XP.
-- **Stats de duel** : le serveur vérifie le jeton Firebase à la connexion et prend le pseudo du compte. Chaque course à 2 joueurs ou plus est enregistrée (collections `tribeRaces`, `tribeUserStats` et `tribeHeadToHead`). Quitter une course en cours compte comme une défaite. Le menu Tribe affiche tes stats, tes face-à-face et le classement.
+- **Stats de duel** : le serveur vérifie le jeton Firebase à la connexion et prend le pseudo du compte. Chaque course à 2 joueurs ou plus est enregistrée (collections `tribeRaces`, `tribeUserStats` et `tribeHeadToHead`). Quitter une course en cours compte comme une défaite. Un compte n'a qu'une connexion à la fois : un nouvel onglet déconnecte l'ancien, sinon on pourrait remplir un salon avec son propre compte pour gonfler ses victoires. Le menu Tribe affiche tes stats, tes face-à-face et le classement.
 - **Lobby retravaillé** : code du salon en grand en haut à droite (un clic copie le lien d'invitation), barre de config Monkeytype (modifiable par le chef seulement), joueurs en cartes. Le zen est interdit en salon.
+- **Accueil** : la première page du site est `/tribe`. Le logo y mène aussi, et le solo reste sur l'icône clavier (`/`).
 - **Branding** : thème `monkeyclash` par défaut (Serika Dark avec le rouge `#ca4754` en couleur principale et les erreurs en jaune), logo clavier « m c. », favicons et icônes redessinés. Plus de pubs ni de merch, et le footer pointe vers le fork.
 
 ## Pièges de la branche Tribe d'upstream (déjà corrigés)
@@ -44,9 +45,8 @@ La branche `newtribemerge` est en chantier. Si quelque chose casse, **soupçonne
 ## Exploitation
 
 ```sh
-# redéployer après un push sur monkeyclash
-ssh 192.168.129.93
-cd ~/monkeyclash && git pull && cd deploy
+# redéployer après un push sur monkeyclash, depuis le checkout du serveur
+git pull && cd deploy
 docker compose up -d --build web tribe backend   # ne reconstruire que ce qui a changé
 docker compose ps
 docker compose logs -f tribe                     # ou backend, web, tunnel
@@ -55,8 +55,8 @@ docker compose restart backend                   # après un changement de backe
 
 - **Config du backend** : `deploy/backend-configuration.json`, relue à chaque démarrage (inscription, profils, XP, tribe).
 - **Variables** : `deploy/.env` sur le serveur, hors git. Le modèle est dans `deploy/.env.example` : `SITE_URL`, `LAN_PORT` (8090), `FINISH_TIMER_SECONDS` et les clés reCAPTCHA.
-- **Secrets** (hors git, dans `deploy/secrets/` sur le serveur) : `serviceAccountKey.json` (clé Firebase Admin, **ne jamais la lire ni la publier**), `tunnel.yml` et `creds.json` (tunnel Cloudflare).
-- **Accès sur le réseau local** : http://192.168.129.93:8090
+- **Secrets** (hors git, dans `deploy/secrets/` sur le serveur) : `serviceAccountKey.json` (clé Firebase Admin, à ne jamais publier), `tunnel.yml` et `creds.json` (tunnel Cloudflare).
+- **Accès sur le réseau local** : `http://<ip du serveur>:8090`
 - **Base de données** : `docker compose exec mongodb mongo monkeytype`
 
 ## Développement local
@@ -84,7 +84,7 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 - **Pas d'email** : sans SMTP, la vérification d'email et « mot de passe oublié » ne marchent pas.
 - **reCAPTCHA** tourne avec les clés de test de Google.
 - La page « about » raconte encore Monkeytype.
-- **Capacité mesurée** : le serveur Tribe tient environ 4000 à 5000 joueurs simultanés sur ce CPU. En pratique, c'est le débit montant de la box qui limite, avec environ 2 à 4 Ko/s par joueur en course.
+- **Capacité** : compter environ 2 à 4 Ko/s montants par joueur en course, c'est souvent la connexion qui limite avant le CPU.
 
 ## Prochaines étapes
 
@@ -92,4 +92,4 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 2. **Limites anti-abus** : connexions par IP et débit maximum par événement socket.
 3. **Public** : politique de confidentialité et suppression de compte (RGPD), SMTP, vraies clés reCAPTCHA.
 4. **Matchmaking** : activer les amis Monkeytype (`connections`), n'afficher les face-à-face qu'entre amis, et ne garder que les 50 dernières courses contre des inconnus.
-5. **Avant toute annonce** : contacter Miodec en privé, puis lancer une bêta avec les personnes intéressées (ticket upstream #255).
+5. **Bêta ouverte** avec les personnes intéressées.
