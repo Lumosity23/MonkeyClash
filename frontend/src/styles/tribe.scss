@@ -213,12 +213,6 @@
         flex-wrap: wrap;
         justify-content: space-between;
         gap: 1rem;
-        .visibility {
-          text-align: right;
-          .value {
-            margin-left: auto;
-          }
-        }
         .group .value {
           display: grid;
           grid-template-columns: 1fr auto;
