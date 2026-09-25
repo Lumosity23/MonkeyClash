@@ -171,8 +171,8 @@
       gap: 2rem;
       grid-template-columns: 3fr 1fr;
       grid-template-rows: auto auto 1fr;
-      // MonkeyClash: config top left, buttons and players top right, room
-      // name and visibility at the bottom of the side
+      // MonkeyClash: config top left, then on the side: buttons, room name,
+      // visibility and players
       .side {
         grid-area: side;
         display: flex;
@@ -209,7 +209,6 @@
         }
       }
       .visibilityAndName {
-        margin-top: auto;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
