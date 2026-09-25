@@ -49,7 +49,7 @@ MonkeyClash part de cette branche et **ajoute son propre serveur temps réel**, 
 - [x] Chat de salon
 - [x] Déploiement sur `monkeyclash.assistantstudent.com` (voir [`deploy/`](deploy/))
 - [x] Rebranding : thème `monkeyclash` par défaut, logo « m c. », sans pubs ni merch
-- [ ] Comptes, **historique des duels et stats** (victoires, meilleur wpm, head-to-head entre potes)
+- [x] Comptes, **historique des duels et stats** (victoires, meilleur wpm, head-to-head entre potes)
 
 # Crédits et licence
 
