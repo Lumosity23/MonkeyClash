@@ -28,6 +28,8 @@ Tout est décrit dans `deploy/docker-compose.yml` : `web`, `tribe`, `backend`, `
 - **Comptes** (Firebase) : inscription et connexion, résultats sauvegardés, records, profil public et XP.
 - **Stats de duel** : le serveur vérifie le jeton Firebase à la connexion et prend le pseudo du compte. Chaque course à 2 joueurs ou plus est enregistrée (collections `tribeRaces`, `tribeUserStats` et `tribeHeadToHead`). Quitter une course en cours compte comme une défaite. Un compte n'a qu'une connexion à la fois : un nouvel onglet déconnecte l'ancien, sinon on pourrait remplir un salon avec son propre compte pour gonfler ses victoires. Le menu Tribe affiche tes stats, tes face-à-face et le classement.
 - **Anti-triche** : le serveur Tribe ne croit pas le résultat envoyé par le client. Il le compare à ce qu'il a vu pendant la course, et aux frappes du joueur. Les frappes servent seulement à ce contrôle : elles ne sont ni stockées ni envoyées aux autres joueurs. Un résultat rejeté devient `invalid(raison)` : pas de position, pas de points, pas de stats. La raison est gardée dans la course (`flag`) et dans les logs (`[anticheat]`). Comme chez Monkeytype, les vraies règles sont dans un **module privé**, hors du repo (`tribe-server/src/private/anticheat.ts`, qui exporte `checkResult`). Sans lui, le serveur ne fait que les contrôles de base de `tribe-server/src/anticheat.ts`. Tu peux écrire tes propres règles avec la même interface. Un résultat accepté reçoit `verified` (✓ à côté du nom dans les résultats). Chaque compte a un compteur `flaggedRaces`, affiché dans ses stats (« rejected ») et dans le classement (✓ si tout est propre, ⚠ et le nombre sinon).
+- **Limites anti-abus** (`tribe-server/src/limits.ts`) : 20 connexions simultanées et 60 nouvelles par minute par IP. Chaque socket a un débit d'événements (rafale de 40, puis 15/s ; créer ou rejoindre un salon coûte plus), et au-delà c'est « Slow down » puis la déconnexion. Les messages sont limités à 500 Ko, et l'API des stats à 120 requêtes par minute par IP. Derrière nginx (`TRUST_PROXY=true`), l'IP vient de `X-Real-IP`, que nginx remplit avec `CF-Connecting-IP` de Cloudflare. Le backend reçoit la même IP dans `X-Forwarded-For` : avant, il voyait tout le monde avec l'IP du conteneur cloudflared.
+- **Intro** : au premier chargement, « clash » tombe sur « monkeytype » et fait tomber « type » (`loading.html`, `loading.scss`). La page de chargement attend la fin de l'animation.
 - **Lobby retravaillé** : code du salon en grand en haut à droite (un clic copie le lien d'invitation), barre de config Monkeytype (modifiable par le chef seulement), joueurs en cartes. Le zen est interdit en salon.
 - **Accueil** : la première page du site est `/tribe`. Le logo y mène aussi, et le solo reste sur l'icône clavier (`/`).
 - **Branding** : thème `monkeyclash` par défaut (Serika Dark avec le rouge `#ca4754` en couleur principale et les erreurs en jaune), logo clavier « m c. », favicons et icônes redessinés. Plus de pubs ni de merch, et le footer pointe vers le fork.
@@ -81,7 +83,6 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 ## Limites connues
 
 - **Anti-triche** : il couvre les duels seulement. Les résultats solo du backend ne sont pas vérifiés (pas de module anticheat).
-- **Aucune limite** de connexions par IP ni de débit par événement (seul le chat a un délai).
 - **Pas d'email** : sans SMTP, la vérification d'email et « mot de passe oublié » ne marchent pas.
 - **reCAPTCHA** tourne avec les clés de test de Google.
 - La page « about » raconte encore Monkeytype.
@@ -90,7 +91,6 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 ## Prochaines étapes
 
 1. **Anti-triche, suite** : vérifier aussi les résultats solo du backend.
-2. **Limites anti-abus** : connexions par IP et débit maximum par événement socket.
-3. **Public** : politique de confidentialité et suppression de compte (RGPD), SMTP, vraies clés reCAPTCHA.
-4. **Matchmaking** : activer les amis Monkeytype (`connections`), n'afficher les face-à-face qu'entre amis, et ne garder que les 50 dernières courses contre des inconnus.
-5. **Bêta ouverte** avec les personnes intéressées.
+2. **Public** : politique de confidentialité et suppression de compte (RGPD), SMTP, vraies clés reCAPTCHA.
+3. **Matchmaking** : activer les amis Monkeytype (`connections`), n'afficher les face-à-face qu'entre amis, et ne garder que les 50 dernières courses contre des inconnus.
+4. **Bêta ouverte** avec les personnes intéressées.

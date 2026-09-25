@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { MongoClient } from "mongodb";
 import { loadAnticheat } from "./anticheat.ts";
+import { clientIp, DEFAULT_LIMITS, RateLimiter } from "./limits.ts";
 import { firebaseAuthenticator, type Authenticate } from "./auth.ts";
 import { MongoStatsStore } from "./mongo-stats.ts";
 import { DEFAULT_TIMINGS } from "./room.ts";
@@ -43,10 +44,24 @@ if (mongoUri !== undefined && mongoUri !== "") {
 }
 
 const statsApi = createStatsApi(stats, corsOrigin);
+// set by our deploy, where nginx passes the player's IP in X-Real-IP
+const trustProxy = env["TRUST_PROXY"] === "true";
+const httpRate = new RateLimiter(
+  DEFAULT_LIMITS.httpPerMinute,
+  DEFAULT_LIMITS.httpPerMinute / 60,
+);
+setInterval(() => httpRate.prune(), 60_000).unref();
 
 const httpServer = createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "content-type": "text/plain" }).end("ok");
+    return;
+  }
+  if (
+    req.url?.startsWith("/tribe-api/") === true &&
+    !httpRate.take(clientIp(req, trustProxy))
+  ) {
+    res.writeHead(429, { "content-type": "text/plain" }).end("slow down");
     return;
   }
   if (statsApi(req, res)) return;
@@ -67,6 +82,7 @@ const server = createTribeServer(httpServer, {
   authenticate,
   stats,
   checkResult: await loadAnticheat(),
+  trustProxy,
 });
 
 httpServer.listen(port, () => {

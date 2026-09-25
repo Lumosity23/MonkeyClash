@@ -2,7 +2,8 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createTribeServer } from "../src/server.ts";
+import { DEFAULT_LIMITS } from "../src/limits.ts";
+import { createTribeServer, type TribeServerOptions } from "../src/server.ts";
 import { MemoryStatsStore } from "../src/stats.ts";
 import type {
   FinalPositions,
@@ -34,17 +35,30 @@ async function authenticate(
   return name === undefined ? undefined : { uid: `uid-${name}`, name };
 }
 
-beforeEach(async () => {
+async function startServer(
+  options: Partial<TribeServerOptions> = {},
+): Promise<void> {
   const httpServer = createServer();
   stats = new MemoryStatsStore();
   ({ close } = createTribeServer(httpServer, {
     timings: TIMINGS,
     authenticate,
     stats,
+    ...options,
   }));
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   url = `http://localhost:${(httpServer.address() as AddressInfo).port}`;
-});
+}
+
+// a fresh server with other limits, for the abuse tests
+async function restartWithLimits(
+  limits: Partial<typeof DEFAULT_LIMITS>,
+): Promise<void> {
+  await close();
+  await startServer({ limits: { ...DEFAULT_LIMITS, ...limits } });
+}
+
+beforeEach(async () => startServer());
 
 afterEach(async () => {
   for (const c of clients.splice(0)) c.disconnect();
@@ -360,6 +374,60 @@ describe("tribe server", () => {
     expect(rooms).toMatchObject([
       { id: room.id, name: "alice's room", size: 2 },
     ]);
+  });
+});
+
+describe("abuse limits", () => {
+  // resolves with the error message when the server refuses the connection
+  async function refused(name: string): Promise<string> {
+    const socket = connect(url, {
+      query: { name },
+      transports: ["websocket"],
+      forceNew: true,
+    });
+    clients.push(socket);
+    return new Promise((resolve) =>
+      socket.once("connect_error", (e) => resolve(e.message)),
+    );
+  }
+
+  it("limits the connections of one IP", async () => {
+    await restartWithLimits({ maxConnectionsPerIp: 2 });
+    await player("a");
+    const b = await player("b");
+    expect(await refused("c")).toBe("Too many connections from your network");
+    // a closed connection frees its place
+    b.disconnect();
+    await new Promise((r) => setTimeout(r, 50));
+    await player("d");
+  });
+
+  it("limits how often an IP connects", async () => {
+    await restartWithLimits({ connectionsPerMinute: 2 });
+    (await player("a")).disconnect();
+    (await player("b")).disconnect();
+    expect(await refused("c")).toBe(
+      "Too many connection attempts, wait a minute",
+    );
+  });
+
+  it("drops events past the rate limit, then disconnects the flooder", async () => {
+    await restartWithLimits({
+      eventBurst: 3,
+      eventsPerSecond: 0.001,
+      maxStrikes: 5,
+    });
+    const alice = await player("alice");
+    const slowDown = once<{ message: string }>(alice, "system_notification");
+    const disconnected = once(alice, "disconnect");
+    for (let i = 0; i < 3; i++) alice.emit("room_leave");
+    // over the limit: an event with an ack still gets an answer
+    expect(
+      await alice.emitWithAck("room_get_public_rooms", { search: "" }),
+    ).toEqual({ status: "Too many requests" });
+    expect((await slowDown).message).toBe("Slow down");
+    for (let i = 0; i < 5; i++) alice.emit("room_leave");
+    await disconnected;
   });
 });
 

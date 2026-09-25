@@ -2,6 +2,13 @@ import type { Server as HttpServer } from "node:http";
 import { Server, type DefaultEventsMap, type Socket } from "socket.io";
 import { basicCheck, type ResultCheck } from "./anticheat.ts";
 import type { Authenticate } from "./auth.ts";
+import {
+  clientIp,
+  DEFAULT_LIMITS,
+  EVENT_COST,
+  RateLimiter,
+  type Limits,
+} from "./limits.ts";
 import { DEFAULT_TIMINGS, Room, type Timings } from "./room.ts";
 import type { StatsStore } from "./stats.ts";
 import {
@@ -28,6 +35,9 @@ export type TribeServerOptions = {
   stats?: StatsStore;
   // decides whether a result can be trusted (see anticheat.ts)
   checkResult: ResultCheck;
+  limits: Limits;
+  // behind our nginx, which puts the player's IP in X-Real-IP
+  trustProxy: boolean;
 };
 
 export const DEFAULT_OPTIONS: TribeServerOptions = {
@@ -37,10 +47,14 @@ export const DEFAULT_OPTIONS: TribeServerOptions = {
   maxUsersPerRoom: 10,
   timings: DEFAULT_TIMINGS,
   checkResult: basicCheck,
+  limits: DEFAULT_LIMITS,
+  trustProxy: false,
 };
 
 const CHAT_COOLDOWN_MS = 250;
 const MAX_CONFIG_BYTES = 200_000;
+// biggest message a client may send (a result with its key timings)
+const MAX_MESSAGE_BYTES = 500_000;
 
 type SocketData = {
   name: string;
@@ -71,8 +85,35 @@ export function createTribeServer(
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const io: TribeIo = new Server(httpServer, {
     cors: { origin: opts.corsOrigin },
+    maxHttpBufferSize: MAX_MESSAGE_BYTES,
   });
   const rooms = new Map<string, Room>();
+
+  const { limits } = opts;
+  const connectionsPerIp = new Map<string, number>();
+  const connectRate = new RateLimiter(
+    limits.connectionsPerMinute,
+    limits.connectionsPerMinute / 60,
+  );
+  const eventRate = new RateLimiter(limits.eventBurst, limits.eventsPerSecond);
+  const pruner = setInterval(() => connectRate.prune(), 60_000);
+  pruner.unref();
+  const ipOf = (socket: TribeSocket): string =>
+    clientIp(socket.request, opts.trustProxy);
+
+  // the client shows the message on the tribe page
+  io.use((socket, next) => {
+    const ip = ipOf(socket);
+    if ((connectionsPerIp.get(ip) ?? 0) >= limits.maxConnectionsPerIp) {
+      next(new Error("Too many connections from your network"));
+      return;
+    }
+    if (!connectRate.take(ip)) {
+      next(new Error("Too many connection attempts, wait a minute"));
+      return;
+    }
+    next();
+  });
 
   // logged in players send their firebase token, the account decides the name
   const identify = async (socket: TribeSocket): Promise<void> => {
@@ -123,6 +164,8 @@ export function createTribeServer(
 
   io.on("connection", (rawSocket) => {
     const socket: TribeSocket = rawSocket;
+    const ip = ipOf(socket);
+    connectionsPerIp.set(ip, (connectionsPerIp.get(ip) ?? 0) + 1);
     const requested = sanitizeName(socket.handshake.query["name"]);
     const account = socket.data.uid;
     socket.data = {
@@ -148,9 +191,25 @@ export function createTribeServer(
       }
     }
 
-    // Registers a handler that never takes the server down on a bad payload.
+    // Registers a handler that never takes the server down on a bad payload,
+    // and drops events past the socket's rate limit.
+    let strikes = 0;
     const on = (event: string, handler: (...args: unknown[]) => void): void => {
       socket.on(event, (...args: unknown[]) => {
+        if (!eventRate.take(socket.id, EVENT_COST[event] ?? 1)) {
+          strikes++;
+          if (strikes % 10 === 1) notify(socket, "Slow down", 0);
+          if (strikes >= limits.maxStrikes) {
+            console.warn(`[limits] ${ipOf(socket)} flooded, disconnected`);
+            socket.disconnect(true);
+          }
+          // a client waiting for an answer gets one
+          const ack = args.at(-1);
+          if (typeof ack === "function") {
+            (ack as Ack)({ status: "Too many requests" });
+          }
+          return;
+        }
         try {
           handler(...args);
         } catch (error) {
@@ -373,12 +432,19 @@ export function createTribeServer(
       if (result) room.setResult(socket.id, result);
     });
 
-    socket.on("disconnect", () => leaveRoom(socket));
+    socket.on("disconnect", () => {
+      leaveRoom(socket);
+      eventRate.delete(socket.id);
+      const left = (connectionsPerIp.get(ip) ?? 1) - 1;
+      if (left > 0) connectionsPerIp.set(ip, left);
+      else connectionsPerIp.delete(ip);
+    });
   });
 
   return {
     io,
     close: async () => {
+      clearInterval(pruner);
       // rooms keep timers running, stop them before closing
       for (const room of rooms.values()) room.dispose();
       rooms.clear();

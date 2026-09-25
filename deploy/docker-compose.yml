@@ -25,6 +25,8 @@ services:
     environment:
       - CORS_ORIGIN=${SITE_URL}
       - FINISH_TIMER_SECONDS=${FINISH_TIMER_SECONDS:-30}
+      # nginx passes the player's IP in X-Real-IP, used by the abuse limits
+      - TRUST_PROXY=true
       # duel stats and account check, same database and key as the backend
       - MONGO_URI=mongodb://mongodb:27017
       - DB_NAME=monkeytype
