@@ -1,7 +1,5 @@
 import { JSXElement } from "solid-js";
 
-import { restartTestEvent } from "../../../events/test";
-import { getActivePage } from "../../../states/core";
 import { getFocus } from "../../../states/test";
 import { cn } from "../../../utils/cn";
 import { isDevEnvironment } from "../../../utils/env";
@@ -9,7 +7,7 @@ import { isDevEnvironment } from "../../../utils/env";
 export function Logo(): JSXElement {
   return (
     <a
-      href={`${location.origin}/`}
+      href={`${location.origin}/tribe`}
       class="-m-2 flex h-6 w-max gap-2 rounded-[0.8rem] p-2 focus-visible:**:data-[ui-element='logoSubtext']:text-transparent"
       aria-label="MonkeyClash Home"
       router-link
@@ -18,9 +16,6 @@ export function Logo(): JSXElement {
         "font-family": "Lexend Deca ,sans-serif",
       }}
       data-ui-element="logo"
-      onClick={() => {
-        if (getActivePage() === "test") restartTestEvent.dispatch();
-      }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

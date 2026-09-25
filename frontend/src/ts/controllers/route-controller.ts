@@ -54,6 +54,13 @@ const routes: Route[] = [
   {
     path: "/",
     load: async (_params, options): Promise<void> => {
+      // MonkeyClash: the site opens on the duels, solo stays one click away
+      if (isLanding && (await getAwaitedTribeMode()) === "enabled") {
+        history.replaceState(null, "", "/tribe");
+        await router(options);
+        return;
+      }
+
       if (options?.tribeOverride === true) {
         await PageController.change("test", {
           tribeOverride: options?.tribeOverride ?? false,
@@ -288,6 +295,9 @@ export async function navigate(
   await router(options);
 }
 
+// true while loading the first page of the visit
+let isLanding = true;
+
 async function router(options = {} as NavigateOptions): Promise<void> {
   const matches = routes.map((r) => {
     return {
@@ -302,6 +312,7 @@ async function router(options = {} as NavigateOptions): Promise<void> {
   };
 
   if (match === undefined) {
+    isLanding = false;
     await route404.load(
       {},
       {
@@ -311,7 +322,10 @@ async function router(options = {} as NavigateOptions): Promise<void> {
     return;
   }
 
-  await match.route.load(getParams(match), options);
+  // routes read isLanding before their first await
+  const load = match.route.load(getParams(match), options);
+  isLanding = false;
+  await load;
 }
 
 window.addEventListener("popstate", () => {
