@@ -1,5 +1,6 @@
 import type { Server as HttpServer } from "node:http";
 import { Server, type DefaultEventsMap, type Socket } from "socket.io";
+import { basicCheck, type ResultCheck } from "./anticheat.ts";
 import type { Authenticate } from "./auth.ts";
 import { DEFAULT_TIMINGS, Room, type Timings } from "./room.ts";
 import type { StatsStore } from "./stats.ts";
@@ -25,6 +26,8 @@ export type TribeServerOptions = {
   authenticate?: Authenticate;
   // where finished races are recorded for the duel stats
   stats?: StatsStore;
+  // decides whether a result can be trusted (see anticheat.ts)
+  checkResult: ResultCheck;
 };
 
 export const DEFAULT_OPTIONS: TribeServerOptions = {
@@ -33,6 +36,7 @@ export const DEFAULT_OPTIONS: TribeServerOptions = {
   corsOrigin: true,
   maxUsersPerRoom: 10,
   timings: DEFAULT_TIMINGS,
+  checkResult: basicCheck,
 };
 
 const CHAT_COOLDOWN_MS = 250;
@@ -87,6 +91,7 @@ export function createTribeServer(
 
   const roomHooks = {
     uidOf: (socketId: string) => io.sockets.sockets.get(socketId)?.data.uid,
+    checkResult: opts.checkResult,
     onRaceFinished: opts.stats
       ? (record: Parameters<StatsStore["saveRace"]>[0]) => {
           opts.stats?.saveRace(record).catch((error: unknown) => {

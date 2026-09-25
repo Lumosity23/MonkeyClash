@@ -33,6 +33,9 @@ export type Result = {
   charStats: number[];
   chartData: unknown;
   resolve: ResultResolve;
+  // ms between keypresses and how long each key was held, for the anticheat
+  keySpacing?: number[];
+  keyDuration?: number[];
 };
 
 // what a client sends every tick

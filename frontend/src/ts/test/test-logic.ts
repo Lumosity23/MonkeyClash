@@ -1208,9 +1208,18 @@ export async function finish(difficultyFailed = false): Promise<void> {
     charStats: completedEvent.charStats,
     chartData: tribeChartData,
     resolve: await testSavePromise,
+    keySpacing: keyTimings(completedEvent.keySpacing),
+    keyDuration: keyTimings(completedEvent.keyDuration),
   });
 
   await Promise.all([savingResultPromise, resultUpdatePromise]);
+}
+
+// key timings in ms, rounded to keep the message small
+function keyTimings(timings: number[] | "toolong"): number[] | undefined {
+  return timings === "toolong"
+    ? undefined
+    : timings.map((ms) => Numbers.roundTo2(ms));
 }
 
 type SaveResultResponse = {

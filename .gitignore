@@ -136,3 +136,4 @@ frontend/.env.sentry-build-plugin
 deploy/secrets/
 deploy/.env
 docs/*.private.md
+tribe-server/src/private/

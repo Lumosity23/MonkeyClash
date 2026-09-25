@@ -82,6 +82,16 @@ export function parseProgress(data: unknown): ProgressIn | undefined {
   };
 }
 
+const MAX_KEYS = 5000;
+
+// a list of key timings in ms, anything else is treated as missing
+function timings(value: unknown): number[] | undefined {
+  if (!Array.isArray(value) || value.length > MAX_KEYS) return undefined;
+  return value.every((n) => num(n, 0, 600_000) !== undefined)
+    ? (value as number[])
+    : undefined;
+}
+
 export function parseResult(data: unknown): Result | undefined {
   if (!isRecord(data)) return undefined;
   const wpm = num(data["wpm"], 0, 1000);
@@ -112,6 +122,8 @@ export function parseResult(data: unknown): Result | undefined {
     charStats,
     chartData: data["chartData"],
     resolve,
+    keySpacing: timings(data["keySpacing"]),
+    keyDuration: timings(data["keyDuration"]),
   };
 }
 

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { MongoClient } from "mongodb";
+import { loadAnticheat } from "./anticheat.ts";
 import { firebaseAuthenticator, type Authenticate } from "./auth.ts";
 import { MongoStatsStore } from "./mongo-stats.ts";
 import { DEFAULT_TIMINGS } from "./room.ts";
@@ -65,6 +66,7 @@ const server = createTribeServer(httpServer, {
   },
   authenticate,
   stats,
+  checkResult: await loadAnticheat(),
 });
 
 httpServer.listen(port, () => {

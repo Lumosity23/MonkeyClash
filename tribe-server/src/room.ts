@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import { checkResult, RaceTrace } from "./anticheat.ts";
+import { basicCheck, RaceTrace, type ResultCheck } from "./anticheat.ts";
 import { computeOutcome, type RaceOutcome } from "./positions.ts";
 import type { RaceRecord } from "./stats.ts";
 import {
@@ -19,6 +19,8 @@ export type RoomHooks = {
   uidOf?: (socketId: string) => string | undefined;
   // called once per finished race with at least two players
   onRaceFinished?: (record: RaceRecord) => void;
+  // decides whether a result can be trusted
+  checkResult?: ResultCheck;
 };
 
 export type Timings = {
@@ -373,9 +375,12 @@ export class Room {
   }
 
   // an invalid result gets no position, no points and no stats
-  private verify(user: User, result: Result): Result {
+  // The keystrokes are only read here, never stored or sent to the room.
+  private verify(user: User, sent: Result): Result {
+    const { keySpacing: _spacing, keyDuration: _duration, ...result } = sent;
     if (!isResultValid(result)) return result;
-    const reason = checkResult(result, {
+    const check = this.hooks.checkResult ?? basicCheck;
+    const reason = check(sent, {
       trace: this.traces.get(user.id) ?? new RaceTrace(),
       raceStartedAt: this.raceStartedAt,
       now: Date.now(),

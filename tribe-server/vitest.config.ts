@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     name: "tribe-server",
     environment: "node",
-    include: ["__tests__/**/*.spec.ts"],
+    // src/private: the anticheat, when installed
+    include: ["__tests__/**/*.spec.ts", "src/private/**/*.spec.ts"],
   },
 });

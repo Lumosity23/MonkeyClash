@@ -35,6 +35,15 @@ export function Footer(): JSXElement {
           />
           <Button
             variant="text"
+            text="support monkeyclash"
+            fa={{
+              icon: "fa-mug-hot",
+              fixedWidth: true,
+            }}
+            href="https://buymeacoffee.com/lumosity23"
+          />
+          <Button
+            variant="text"
             text="powered by monkeytype"
             fa={{
               icon: "fa-keyboard",

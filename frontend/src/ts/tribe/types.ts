@@ -24,6 +24,9 @@ export type Result = {
   charStats: number[];
   chartData: ChartData;
   resolve: ResultResolve;
+  // MonkeyClash: for the server's anticheat, it doesn't share them
+  keySpacing?: number[];
+  keyDuration?: number[];
 };
 
 type LoggedInDontSave = {
