@@ -1,4 +1,5 @@
 import type { Server } from "socket.io";
+import { checkResult, RaceTrace } from "./anticheat.ts";
 import { computeOutcome, type RaceOutcome } from "./positions.ts";
 import type { RaceRecord } from "./stats.ts";
 import {
@@ -74,6 +75,9 @@ export class Room {
     string,
     { name: string; uid: string | undefined }
   >();
+  // what the anticheat saw of each player during the current race
+  private readonly traces = new Map<string, RaceTrace>();
+  private raceStartedAt = 0;
 
   constructor(
     io: Server,
@@ -252,6 +256,7 @@ export class Room {
     // the leader and every ready, non-afk player takes part
     const typing: Record<string, { isTyping: boolean }> = {};
     this.participants.clear();
+    this.traces.clear();
     for (const user of this.users.values()) {
       const takesPart =
         (user.isLeader === true || user.isReady === true) &&
@@ -298,6 +303,7 @@ export class Room {
     for (const user of this.users.values()) user.isReady = false;
     // room_race_started moves the client to RACE_ONGOING on its own
     this.state = ROOM_STATE.RACE_ONGOING;
+    this.raceStartedAt = Date.now();
     this.io.to(this.id).emit("room_race_started");
     this.progressTicker = setInterval(
       () => this.broadcastProgress(),
@@ -346,18 +352,47 @@ export class Room {
       ...progress,
       wpmProgress: user.progress?.wpmProgress ?? 0,
     };
+    let trace = this.traces.get(userId);
+    if (!trace) {
+      trace = new RaceTrace();
+      this.traces.set(userId, trace);
+    }
+    trace.record(progress, Date.now());
   }
 
   setResult(userId: string, result: Result): void {
     const user = this.users.get(userId);
     if (!user?.isTyping || !RACING_STATES.has(this.state)) return;
-    this.finishUser(user, result);
+    this.finishUser(user, this.verify(user, result));
 
     const someoneStillTyping = [...this.users.values()].some((u) => u.isTyping);
     if (this.state === ROOM_STATE.RACE_ONGOING && someoneStillTyping) {
       this.startFinishTimer();
     }
     this.checkRaceComplete();
+  }
+
+  // an invalid result gets no position, no points and no stats
+  private verify(user: User, result: Result): Result {
+    if (!isResultValid(result)) return result;
+    const reason = checkResult(result, {
+      trace: this.traces.get(user.id) ?? new RaceTrace(),
+      raceStartedAt: this.raceStartedAt,
+      now: Date.now(),
+      config: this.config,
+    });
+    if (reason === undefined) return result;
+    const uid = this.participants.get(user.id)?.uid ?? "guest";
+    console.warn(`[anticheat] ${user.name} (${uid}): ${reason}`);
+    return {
+      ...result,
+      resolve: {
+        ...result.resolve,
+        valid: false,
+        invalidReason: reason,
+        anticheat: reason,
+      },
+    };
   }
 
   private finishUser(user: User, result: Result | undefined): void {
@@ -464,6 +499,10 @@ export class Room {
           uid: participant.uid,
           name: participant.name,
           valid: isResultValid(result),
+          flag:
+            typeof result?.resolve["anticheat"] === "string"
+              ? result.resolve["anticheat"]
+              : undefined,
           wpm: result?.wpm,
           acc: result?.acc,
           position: placed?.position,

@@ -6,6 +6,8 @@ export type RacePlayer = {
   uid: string | undefined;
   name: string;
   valid: boolean;
+  // why the anticheat rejected the result
+  flag?: string | undefined;
   wpm: number | undefined;
   acc: number | undefined;
   // undefined when the player had no valid result (failed, afk, left)

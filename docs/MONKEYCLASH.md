@@ -24,9 +24,10 @@ Tout est décrit dans `deploy/docker-compose.yml` : `web`, `tribe`, `backend`, `
 ## Ce qui marche
 
 - **Duels** : salons privés ou publics avec un code à 6 caractères. Le chef choisit la config avec la barre de Monkeytype. Ensuite : compte à rebours, curseurs adverses en direct, résultats, positions, points, couronnes et chat (@mentions, emojis). Et « Next test » pour la revanche.
-- **Serveur Tribe** (`tribe-server/`) : il implémente le protocole du client Tribe, reconstitué à partir de son code. Node 24 exécute directement le TypeScript. Tout est en mémoire, et un redémarrage ferme les salons. Il y a 29 tests (`pnpm test`).
+- **Serveur Tribe** (`tribe-server/`) : il implémente le protocole du client Tribe, reconstitué à partir de son code. Node 24 exécute directement le TypeScript. Tout est en mémoire, et un redémarrage ferme les salons. Tests : `pnpm test`.
 - **Comptes** (Firebase) : inscription et connexion, résultats sauvegardés, records, profil public et XP.
 - **Stats de duel** : le serveur vérifie le jeton Firebase à la connexion et prend le pseudo du compte. Chaque course à 2 joueurs ou plus est enregistrée (collections `tribeRaces`, `tribeUserStats` et `tribeHeadToHead`). Quitter une course en cours compte comme une défaite. Un compte n'a qu'une connexion à la fois : un nouvel onglet déconnecte l'ancien, sinon on pourrait remplir un salon avec son propre compte pour gonfler ses victoires. Le menu Tribe affiche tes stats, tes face-à-face et le classement.
+- **Anti-triche (niveau 1)** (`tribe-server/src/anticheat.ts`) : le serveur recalcule le wpm à partir des caractères et de la durée, vérifie le raw, la durée du mode temps et le plafond de 300 wpm. Il compare aussi le résultat à ce qu'il a vu pendant la course : durée de frappe mesurée par lui, wpm en direct, et progression bien reçue. Un résultat rejeté devient `invalid(raison)` : pas de position, pas de points, pas de stats. La raison est gardée dans la course (`flag`) et affichée dans les logs (`[anticheat]`). Ça bloque un résultat trafiqué, pas un bot qui tape vraiment.
 - **Lobby retravaillé** : code du salon en grand en haut à droite (un clic copie le lien d'invitation), barre de config Monkeytype (modifiable par le chef seulement), joueurs en cartes. Le zen est interdit en salon.
 - **Accueil** : la première page du site est `/tribe`. Le logo y mène aussi, et le solo reste sur l'icône clavier (`/`).
 - **Branding** : thème `monkeyclash` par défaut (Serika Dark avec le rouge `#ca4754` en couleur principale et les erreurs en jaune), logo clavier « m c. », favicons et icônes redessinés. Plus de pubs ni de merch, et le footer pointe vers le fork.
@@ -79,7 +80,7 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 
 ## Limites connues
 
-- Les résultats envoyés par le navigateur sont **crus sans vérification** : pas d'anti-triche, ni dans le serveur Tribe ni dans le backend (pas de module anticheat).
+- **Anti-triche partiel** : les duels sont vérifiés (niveau 1), mais pas encore les bots (rythme de frappe). Les résultats solo du backend ne sont pas vérifiés du tout (pas de module anticheat).
 - **Aucune limite** de connexions par IP ni de débit par événement (seul le chat a un délai).
 - **Pas d'email** : sans SMTP, la vérification d'email et « mot de passe oublié » ne marchent pas.
 - **reCAPTCHA** tourne avec les clés de test de Google.
@@ -88,7 +89,7 @@ cd frontend && FORCE_TRIBE=true pnpm dev         # :3000, puis http://localhost:
 
 ## Prochaines étapes
 
-1. **Anti-triche**, en commençant par ce que le serveur peut vérifier lui-même : cohérence du wpm, du temps et des caractères avec la course qu'il a chronométrée, cohérence avec la progression reçue pendant la course, et bornes plausibles.
+1. **Anti-triche niveau 2** : envoyer le rythme de frappe (écart entre touches, durée d'appui) et signaler les frappes trop régulières. Ensuite, un badge « vérifié » et un compteur de courses rejetées par compte.
 2. **Limites anti-abus** : connexions par IP et débit maximum par événement socket.
 3. **Public** : politique de confidentialité et suppression de compte (RGPD), SMTP, vraies clés reCAPTCHA.
 4. **Matchmaking** : activer les amis Monkeytype (`connections`), n'afficher les face-à-face qu'entre amis, et ne garder que les 50 dernières courses contre des inconnus.

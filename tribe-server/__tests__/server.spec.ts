@@ -97,13 +97,14 @@ async function stateReached(socket: Socket, state: string): Promise<unknown> {
   );
 }
 
+// a consistent result: 50 correct characters typed at `wpm`
 function result(wpm: number): Result {
   return {
     wpm,
     raw: wpm + 3,
     acc: 97,
     consistency: 75,
-    testDuration: 10,
+    testDuration: 600 / wpm,
     charStats: [50, 1, 0, 0],
     chartData: { wpm: [wpm], burst: [wpm], err: [0] },
     resolve: { login: false, bailedOut: false },
@@ -424,6 +425,35 @@ describe("duel stats", () => {
         wins: 0,
         losses: 1,
         draws: 0,
+      },
+    ]);
+  });
+
+  it("rejects a tampered result", async () => {
+    const { alice, bob } = await duelRoom(true);
+    await startRace(alice, bob);
+    const over = raceOver(alice);
+    const flagged = waitFor<{ userId: string; result: Result }>(
+      alice,
+      "room_user_result",
+      (d) => d.userId === bob.id,
+    );
+    alice.emit("room_result", { result: result(90) });
+    // same characters, but claims 250 wpm
+    bob.emit("room_result", { result: { ...result(90), wpm: 250 } });
+    expect((await flagged).result.resolve).toMatchObject({
+      valid: false,
+      invalidReason: "wpm does not match the characters typed",
+    });
+    await over;
+
+    expect(stats.races[0]?.players).toMatchObject([
+      { uid: "uid-alice", position: 1 },
+      {
+        uid: "uid-bob",
+        position: undefined,
+        valid: false,
+        flag: "wpm does not match the characters typed",
       },
     ]);
   });
