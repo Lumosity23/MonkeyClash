@@ -80,7 +80,7 @@ function updateRoomState(state: TribeTypes.RoomState): void {
     const self = TribeState.getSelf();
     if (self && (self.isReady || self.isLeader)) {
       showSuccessNotification("Race is starting...", {
-        customTitle: "Tribe",
+        customTitle: "Clash",
       });
     }
   } else if (state === TribeTypes.ROOM_STATE.RACE_COUNTDOWN) {
@@ -133,7 +133,7 @@ export async function init(): Promise<void> {
   TribePagePreloader.updateIcon("circle-notch", true);
   TribePagePreloader.updateText("Awaiting authentication");
   await authPromise;
-  TribePagePreloader.updateText("Connecting to Tribe");
+  TribePagePreloader.updateText("Connecting to Clash");
   TribePagePreloader.updateSubtext("Please wait...");
 
   const snapName = DB.getSnapshot()?.name;
@@ -303,7 +303,7 @@ TribeSocket.in.system.disconnect((reason, details) => {
       //@ts-expect-error tribe
       `Disconnected: ${details?.["description"]} (${reason})`,
       {
-        customTitle: "Tribe",
+        customTitle: "Clash",
       },
     );
   }
@@ -327,7 +327,7 @@ TribeSocket.in.system.connectFailed((err) => {
   console.error(err);
   if (!qs(".pageTribe")?.hasClass("active")) {
     showErrorNotification("Connection failed", {
-      customTitle: "Tribe",
+      customTitle: "Clash",
     });
   }
   Result.updateTribeElements();
@@ -348,7 +348,7 @@ TribeSocket.in.system.connectError((err) => {
   console.error(err);
   if (!qs(".pageTribe")?.hasClass("active")) {
     showErrorNotification("Connection error", {
-      customTitle: "Tribe",
+      customTitle: "Clash",
     });
   }
   Result.updateTribeElements();
@@ -366,13 +366,13 @@ TribeSocket.in.system.connectError((err) => {
 
 TribeSocket.in.system.reconnect((attempt) => {
   showSuccessNotification(`Reconnecting successful. (${attempt})`, {
-    customTitle: "Tribe",
+    customTitle: "Clash",
   });
 });
 
 TribeSocket.in.system.reconnectAttempt((attempt) => {
   showNoticeNotification(`Reconnecting... (${attempt})`, {
-    customTitle: "Tribe",
+    customTitle: "Clash",
   });
 });
 
@@ -383,15 +383,15 @@ TribeSocket.in.system.notification((data) => {
 
   if (data.level === 1) {
     showSuccessNotification(data.message, {
-      customTitle: "Tribe",
+      customTitle: "Clash",
     });
   } else if ((data.level ?? 0) === 0) {
     showNoticeNotification(data.message, {
-      customTitle: "Tribe",
+      customTitle: "Clash",
     });
   } else if (data.level === -1) {
     showErrorNotification(data.message, {
-      customTitle: "Tribe",
+      customTitle: "Clash",
     });
   }
 });

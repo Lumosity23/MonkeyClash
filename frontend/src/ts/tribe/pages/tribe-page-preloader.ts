@@ -36,7 +36,7 @@ export function hideReconnectButton(): void {
 
 export function reset(): void {
   updateIcon("circle-notch", true);
-  updateText("Connecting to Tribe");
+  updateText("Connecting to Clash");
   updateSubtext("Please wait...");
   hideReconnectButton();
 }

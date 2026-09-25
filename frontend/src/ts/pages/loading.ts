@@ -7,6 +7,23 @@ const barEl = pageEl?.qs(".bar");
 const errorEl = pageEl?.qs(".error");
 const spinnerEl = pageEl?.qs(".spinner");
 const textEl = pageEl?.qs(".text");
+const introEl = pageEl?.qs(".clashIntro");
+
+// MonkeyClash: the intro plays on the first load of the visit only, and that
+// load lasts until the intro is over
+export async function waitForIntro(): Promise<void> {
+  const el = introEl?.native;
+  if (el?.isConnected !== true) return;
+  // its animations only start once the app is on screen
+  for (let i = 0; i < 40 && !el.checkVisibility(); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  await Promise.all(
+    el
+      .getAnimations({ subtree: true })
+      .map(async (animation) => animation.finished.catch(() => undefined)),
+  );
+}
 
 export async function updateBar(
   percentage: number,
@@ -49,6 +66,8 @@ export const page = new Page({
   path: "/",
   afterHide: async (): Promise<void> => {
     Skeleton.remove("pageLoading");
+    // later loads (account page, ...) go straight to the bar
+    introEl?.remove();
   },
   beforeShow: async (): Promise<void> => {
     Skeleton.append("pageLoading", "main");

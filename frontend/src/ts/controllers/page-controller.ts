@@ -229,6 +229,7 @@ async function showSyncLoading({
     }
   }
 
+  await PageLoading.waitForIntro();
   await PageLoading.page.element.promiseAnimate({
     opacity: "0",
     duration: totalDuration / 2,
@@ -323,6 +324,8 @@ export async function change(
   qsa(".page")?.removeClass("active");
 
   //previous page
+  // MonkeyClash: the site starts on the loading page, let its intro finish
+  if (previousPage === pages.loading) await PageLoading.waitForIntro();
   await previousPage?.beforeHide?.({
     tribeOverride: options.tribeOverride ?? false,
   });
