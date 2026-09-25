@@ -9,24 +9,20 @@ const spinnerEl = pageEl?.qs(".spinner");
 const textEl = pageEl?.qs(".text");
 const introEl = pageEl?.qs(".clashIntro");
 
-// MonkeyClash: the first load of the visit plays the README banner animation
-// and lasts until it is over. The svg animates as soon as it loads, so it only
-// gets its src once on screen, and is fetched early so that is instant.
-const INTRO_SRC = "/images/monkeyclash-banner.svg";
-const INTRO_MS = 1300;
-const sleep = async (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-new Image().src = INTRO_SRC;
-
+// MonkeyClash: the first load of the visit plays the intro (the README banner
+// animation) and lasts until it is over
 export async function waitForIntro(): Promise<void> {
-  const el = introEl?.native as HTMLImageElement | undefined;
-  if (el?.isConnected !== true || el.src !== "") return;
-  for (let i = 0; i < 40 && !el.checkVisibility(); i++) await sleep(50);
-  // let the app fade in first
-  await sleep(250);
-  el.src = INTRO_SRC;
-  await el.decode().catch(() => undefined);
-  await sleep(INTRO_MS);
+  const el = introEl?.native;
+  if (el?.isConnected !== true) return;
+  // its animations only start once the app is on screen
+  for (let i = 0; i < 40 && !el.checkVisibility(); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  await Promise.all(
+    el
+      .getAnimations({ subtree: true })
+      .map(async (animation) => animation.finished.catch(() => undefined)),
+  );
 }
 
 export async function updateBar(

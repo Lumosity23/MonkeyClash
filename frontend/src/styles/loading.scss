@@ -38,11 +38,112 @@
     }
   }
 
-  // MonkeyClash intro: the README banner (static/images/monkeyclash-banner.svg)
+  // MonkeyClash intro: the README banner animation, drawn by
+  // scripts/banner/make_intro.py in the theme's colors. Same timings as the
+  // banner, 0.3s later so the app has faded in.
   .clashIntro {
     justify-self: center;
-    width: min(100%, 40rem);
+    width: min(90%, 36rem);
     height: auto;
-    border-radius: var(--roundness);
+    overflow: visible;
+    margin-bottom: 1rem;
+
+    g {
+      transform-box: view-box;
+    }
+
+    .ciLogo,
+    .ciDrop {
+      fill: var(--main-color);
+      color: var(--main-color);
+    }
+
+    .ciText {
+      fill: var(--text-color);
+    }
+
+    .ciShake {
+      animation: ciShake 0.35s ease-out 0.7s 1 both;
+    }
+
+    .ciDrop {
+      transform-origin: var(--ci-clash-origin);
+      animation:
+        ciFall 0.45s cubic-bezier(0.55, 0, 0.9, 0.45) 0.3s 1 both,
+        ciSquash 0.5s ease-out 0.75s 1 forwards;
+    }
+
+    .ciKnocked {
+      transform-origin: var(--ci-type-origin);
+      animation: ciKnock 0.8s cubic-bezier(0.3, 0, 0.8, 0.5) 0.73s 1 forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ciShake,
+      .ciDrop,
+      .ciKnocked {
+        animation-duration: 1ms;
+        animation-delay: 0s;
+      }
+    }
+  }
+}
+
+@keyframes ciShake {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-4px, 3px);
+  }
+  40% {
+    transform: translate(4px, -2px);
+  }
+  60% {
+    transform: translate(-3px, 1px);
+  }
+  80% {
+    transform: translate(2px, -1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes ciFall {
+  0% {
+    transform: translate(0, -200px) scale(0.96, 1.12);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1);
+  }
+}
+
+@keyframes ciSquash {
+  0% {
+    transform: scale(1.14, 0.82);
+  }
+  40% {
+    transform: scale(0.95, 1.06);
+  }
+  70% {
+    transform: scale(1.02, 0.98);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes ciKnock {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(14px, -18px) rotate(12deg);
+  }
+  100% {
+    transform: translate(70px, 230px) rotate(55deg);
+    opacity: 0;
   }
 }
