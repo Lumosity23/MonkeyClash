@@ -57,4 +57,6 @@ MonkeyClash est un projet de fans **non affilié à Monkeytype**. Tout le moteur
 
 Comme l'original, ce projet est sous licence [GPL-3.0](LICENSE). Le tag « Clash » utilise la police [Sedgwick Ave Display](https://fonts.google.com/specimen/Sedgwick+Ave+Display) (SIL Open Font License), la bannière se régénère avec `scripts/banner/make_banner.py` et les icônes avec `scripts/branding/`.
 
+L'état du projet, le déploiement et la roadmap sont dans [`docs/MONKEYCLASH.md`](docs/MONKEYCLASH.md).
+
 Le README original de Monkeytype est dans [`docs/MONKEYTYPE_README.md`](docs/MONKEYTYPE_README.md).
