@@ -438,7 +438,13 @@ describe("duel stats", () => {
       "room_user_result",
       (d) => d.userId === bob.id,
     );
+    const verified = waitFor<{ userId: string; result: Result }>(
+      bob,
+      "room_user_result",
+      (d) => d.userId === alice.id,
+    );
     alice.emit("room_result", { result: result(90) });
+    expect((await verified).result.resolve).toMatchObject({ verified: true });
     // same characters, but claims 250 wpm
     bob.emit("room_result", { result: { ...result(90), wpm: 250 } });
     expect((await flagged).result.resolve).toMatchObject({
@@ -456,6 +462,10 @@ describe("duel stats", () => {
         flag: "wpm does not match the characters typed",
       },
     ]);
+    expect((await stats.user("uid-bob"))?.stats).toMatchObject({
+      races: 1,
+      flaggedRaces: 1,
+    });
   });
 
   it("counts a rage quit as a loss", async () => {

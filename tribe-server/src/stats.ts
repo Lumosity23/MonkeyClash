@@ -33,6 +33,8 @@ export type UserStats = {
   podiums: number;
   points: number;
   wpmSum: number;
+  // races whose result the anticheat rejected
+  flaggedRaces: number;
   bestWpm: number;
   lastRaceAt: number;
 };
@@ -96,6 +98,7 @@ export function statsIncrements(record: RaceRecord): {
         podiums: p.position !== undefined && p.position <= 3 ? 1 : 0,
         points: p.points,
         wpmSum: validWpm ?? 0,
+        flaggedRaces: p.flag !== undefined ? 1 : 0,
       },
       bestWpm: validWpm ?? 0,
     };
@@ -179,6 +182,7 @@ export class MemoryStatsStore implements StatsStore {
         podiums: 0,
         points: 0,
         wpmSum: 0,
+        flaggedRaces: 0,
         bestWpm: 0,
         lastRaceAt: 0,
       };

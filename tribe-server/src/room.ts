@@ -386,7 +386,9 @@ export class Room {
       now: Date.now(),
       config: this.config,
     });
-    if (reason === undefined) return result;
+    if (reason === undefined) {
+      return { ...result, resolve: { ...result.resolve, verified: true } };
+    }
     const uid = this.participants.get(user.id)?.uid ?? "guest";
     console.warn(`[anticheat] ${user.name} (${uid}): ${reason}`);
     return {

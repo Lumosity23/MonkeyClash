@@ -3,9 +3,13 @@ import type { StatsStore, UserStats } from "./stats.ts";
 
 const LEADERBOARD_SIZE = 100;
 
-function withAverages(stats: UserStats): UserStats & { avgWpm: number } {
+function withAverages(
+  // players from before the anticheat have no counter yet
+  stats: Omit<UserStats, "flaggedRaces"> & { flaggedRaces?: number },
+): UserStats & { avgWpm: number } {
   return {
     ...stats,
+    flaggedRaces: stats.flaggedRaces ?? 0,
     avgWpm: stats.validRaces > 0 ? stats.wpmSum / stats.validRaces : 0,
   };
 }
